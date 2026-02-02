@@ -1,0 +1,8 @@
+project:
+  name: qlearning-adversarial
+  grid_size: 10
+training:
+  episodes: 1000
+  alpha: 0.1
+  gamma: 0.95
+  epsilon: 0.1
