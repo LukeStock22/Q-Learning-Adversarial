@@ -10,6 +10,19 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
+## Run
+```bash
+PYTHONPATH=src python -m qlearning_adversarial.main
+```
+
+## Configuration
+Edit `configs/default.yaml` to change grid size, training hyperparameters, evaluation episodes, and output paths.
+
+## Outputs
+Running the program writes:
+- `outputs/rewards.csv`: per-episode reward and moving average
+- `outputs/learning_curve.png`: simple training curve plot
+
 ## Project Goals
 - Compare stochastic vs adversarial training for robustness in dynamic gridworlds
 - Evaluate generalization to unseen layouts and disruption patterns
