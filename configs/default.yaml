@@ -1,14 +1,28 @@
 project:
   name: qlearning-adversarial
-  grid_size: 10
+  grid_size: 5
   seed: 7
   output_dir: outputs
+run:
+  tier: debug
+  debug:
+    train_episodes: 5000
+    eval_id_episodes: 50
+    eval_ood_episodes: 50
+  report:
+    train_episodes: 20000
+    eval_id_episodes: 200
+    eval_ood_episodes: 200
 training:
-  episodes: 1000
   max_steps: 200
   alpha: 0.1
   gamma: 0.95
   epsilon: 0.1
+  agent_count: 1
+  num_packages: 1
+  shared_q: true
+  spill_count: 0
+  progress_every: 100
 eval:
-  episodes: 50
+  mode: both
   max_steps: 200

@@ -2,6 +2,8 @@
 
 Tabular Q-Learning in a grid-based warehouse environment with stochastic disturbances and strategic adversaries.
 
+Current focus: a two-agent gridworld with multiple packages, fixed shelves, and per-episode spill obstacles (no adversaries yet).
+
 ## Setup
 ```bash
 python3 -m venv .venv
@@ -18,17 +20,39 @@ PYTHONPATH=src python -m qlearning_adversarial.main
 ## Configuration
 Edit `configs/default.yaml` to change grid size, training hyperparameters, evaluation episodes, and output paths.
 
+## Evaluation Modes
+- ID-A: same exact layout as training (same shelf + package/destination), but spills randomized each episode.
+- OOD: new shelf layout and new package/destination placements; same disturbance parameters.
+
 ## Outputs
 Running the program writes:
 - `outputs/rewards.csv`: per-episode reward and moving average
 - `outputs/learning_curve.png`: simple training curve plot
+- `outputs/gridworld_layout.png`: static image of the grid layout (starts, packages, destinations, shelf)
+- `outputs/metrics.txt`: ID-A and OOD evaluation averages
 
 ## Project Goals
 - Compare stochastic vs adversarial training for robustness in dynamic gridworlds
 - Evaluate generalization to unseen layouts and disruption patterns
 
 ## Repo Status
-This is the initial skeleton. Core environment + training loop to be added.
+Working multi-agent skeleton with training, evaluation, and plotting.
+
+## Customizability
+The following parameters can be edited in `configs/default.yaml`:
+- `project.grid_size`: grid width/height
+- `project.seed`: base RNG seed
+- `project.output_dir`: output directory
+- `run.tier`: `debug` (fast) or `report` (longer)
+- `run.debug.*` / `run.report.*`: train and eval episode counts per tier
+- `training.max_steps`: max steps per episode
+- `training.alpha`, `training.gamma`, `training.epsilon`: Q-learning hyperparameters
+- `training.agent_count`: number of agents (1 or 2)
+- `training.num_packages`: number of packages/destinations
+- `training.shared_q`: shared Q-table toggle for two agents
+- `training.spill_count`: number of randomized spill obstacles per episode
+- `eval.mode`: `id_a`, `ood`, or `both`
+- `eval.max_steps`: max steps per evaluation episode
 
 ## Repository Structure
 - `.git/`: Git metadata for version control.
@@ -51,10 +75,10 @@ This is the initial skeleton. Core environment + training loop to be added.
 - `src/qlearning_adversarial/`: Core package for the project.
 - `src/qlearning_adversarial/__init__.py`: Package initializer.
 - `src/qlearning_adversarial/main.py`: Entry point for running training/evaluation.
-- `src/qlearning_adversarial/env.py`: Gridworld environment and adversary dynamics (placeholder).
-- `src/qlearning_adversarial/agent.py`: Tabular Q-learning agent (placeholder).
-- `src/qlearning_adversarial/train.py`: Training loop (placeholder).
-- `src/qlearning_adversarial/eval.py`: Evaluation utilities (placeholder).
-- `src/qlearning_adversarial/utils.py`: Shared helpers (placeholder).
+- `src/qlearning_adversarial/env.py`: Two-agent gridworld with multi-package pickup/delivery, collisions, and fixed shelf.
+- `src/qlearning_adversarial/agent.py`: Single- and multi-agent Q-learning implementations with shared-table option.
+- `src/qlearning_adversarial/train.py`: Training loop and reward smoothing.
+- `src/qlearning_adversarial/eval.py`: Greedy evaluation loop.
+- `src/qlearning_adversarial/utils.py`: Seeding and filesystem helpers.
 - `tests/`: Automated tests.
 - `tests/test_smoke.py`: Basic smoke test placeholder.

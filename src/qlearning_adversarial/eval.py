@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from .agent import QLearningAgent
+from .agent import MultiAgentQLearning
 from .env import GridworldEnv
 
 
 def evaluate(
     env: GridworldEnv,
-    agent: QLearningAgent,
+    agent: MultiAgentQLearning,
     episodes: int = 50,
     max_steps: int = 200,
 ) -> list[float]:
@@ -21,8 +21,11 @@ def evaluate(
 
         for _ in range(max_steps):
             state_idx = env.encode_state(state)
-            action = agent.select_greedy_action(state_idx)
-            result = env.step(action)
+            actions = agent.select_greedy_actions(state_idx)
+            joint_action = 0
+            for idx, action in enumerate(actions):
+                joint_action += action * (env.n_actions**idx)
+            result = env.step(joint_action)
             total += result.reward
             state = result.state
             if result.done:
