@@ -4,12 +4,14 @@ Tabular Q-Learning in a grid-based warehouse environment with stochastic disturb
 
 Current focus: a two-agent gridworld with multiple packages, fixed shelves, and per-episode spill obstacles (no adversaries yet).
 
+Current Status: Current status: A multi-agent gridworld with package delivery tasks, fixed shelves, randomized spills, and an active jamming adversary (pursuit bot).
 ## Setup
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python -m pip install imageio # Required for visualization
 ```
 
 ## Run
@@ -30,6 +32,9 @@ Running the program writes:
 - `outputs/learning_curve.png`: simple training curve plot
 - `outputs/gridworld_layout.png`: static image of the grid layout (starts, packages, destinations, shelf)
 - `outputs/metrics.txt`: ID-A and OOD evaluation averages
+- `outputs/q_table.pkl`: The saved Q-table.
+- `outputs/env_config.pkl`: The map layout configuration for visualization.
+- `outputs/final_demo.gif`: Visual replay of the agent's performance.
 
 ## Project Goals
 - Compare stochastic vs adversarial training for robustness in dynamic gridworlds
@@ -75,7 +80,7 @@ The following parameters can be edited in `configs/default.yaml`:
 - `src/qlearning_adversarial/`: Core package for the project.
 - `src/qlearning_adversarial/__init__.py`: Package initializer.
 - `src/qlearning_adversarial/main.py`: Entry point for running training/evaluation.
-- `src/qlearning_adversarial/env.py`: Two-agent gridworld with multi-package pickup/delivery, collisions, and fixed shelf.
+- `src/qlearning_adversarial/env.py`: Two-agent gridworld with multi-package pickup/delivery, collisions, and fixed shelf and adversary_pos and pursuit logic.
 - `src/qlearning_adversarial/agent.py`: Single- and multi-agent Q-learning implementations with shared-table option.
 - `src/qlearning_adversarial/train.py`: Training loop and reward smoothing.
 - `src/qlearning_adversarial/eval.py`: Greedy evaluation loop.

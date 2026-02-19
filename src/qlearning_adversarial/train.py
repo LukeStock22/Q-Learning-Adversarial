@@ -6,6 +6,9 @@ and updates the Q-table after every step.
 
 from __future__ import annotations
 
+import pickle 
+import os    
+
 from typing import Iterable
 
 from .agent import MultiAgentQLearning
@@ -60,6 +63,45 @@ def train(
 
     if progress_every > 0:
         print()
+
+
+    output_dir = "outputs"
+    os.makedirs(output_dir, exist_ok=True)
+    
+
+    q_table_path = os.path.join(output_dir, "q_table.pkl")
+
+    if hasattr(agent, "q_shared") and agent.q_shared is not None:
+        with open(q_table_path, "wb") as f:
+            pickle.dump(agent.q_shared, f)
+        print(f"\n[System] Shared Q-Table saved to: {q_table_path}")
+    elif hasattr(agent, "q_agents") and agent.q_agents is not None:
+        with open(q_table_path, "wb") as f:
+            pickle.dump(agent.q_agents, f)
+        print(f"\n[System] Multi-Agent Q-Tables saved to: {q_table_path}")
+    elif hasattr(agent, "q"):
+        with open(q_table_path, "wb") as f:
+            pickle.dump(agent.q, f)
+        print(f"\n[System] Single Agent Q-Table saved to: {q_table_path}")
+    else:
+        print(f"\n[Warning] Could not save model (no known Q-table attribute).")
+
+
+    env_config = {
+        "size": env.size,
+        "agent_count": env.agent_count,
+        "spill_count": env.spill_count,
+        "starts": env.starts,
+        "package_locations": env.package_locations,
+        "destinations": env.destinations,
+        "obstacles": env.shelf_obstacles, 
+        "max_steps": env.max_steps
+    }
+    config_path = os.path.join(output_dir, "env_config.pkl")
+    with open(config_path, "wb") as f:
+        pickle.dump(env_config, f)
+    print(f"[System] Environment Layout saved to: {config_path}")
+    # ===================================================================
 
     return rewards
 
