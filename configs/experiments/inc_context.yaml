@@ -1,0 +1,4 @@
+# Same as default, but include relative package/destination context in state encoding.
+
+state_features:
+  include_relative_package_destination: true

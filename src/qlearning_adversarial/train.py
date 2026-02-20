@@ -6,8 +6,8 @@ and updates the Q-table after every step.
 
 from __future__ import annotations
 
-import pickle 
-import os    
+import os
+import pickle
 
 from typing import Iterable
 
@@ -25,11 +25,23 @@ def train(
     episodes: int = 200,
     max_steps: int = 200,
     progress_every: int = DEFAULT_PROGRESS_EVERY,
+    output_dir: str = "outputs",
+    artifact_prefix: str = "",
+    epsilon_start: float | None = None,
+    epsilon_end: float | None = None,
 ) -> list[float]:
     """Train the agent and return total reward per episode."""
     rewards: list[float] = []
 
     for episode_idx in range(1, episodes + 1):
+        # Optional linear epsilon decay across training episodes.
+        if epsilon_start is not None and epsilon_end is not None:
+            if episodes <= 1:
+                agent.epsilon = float(epsilon_end)
+            else:
+                progress = (episode_idx - 1) / (episodes - 1)
+                agent.epsilon = float(epsilon_start + progress * (epsilon_end - epsilon_start))
+
         state = env.reset()
         total = 0.0
         done = False
@@ -65,11 +77,11 @@ def train(
         print()
 
 
-    output_dir = "outputs"
     os.makedirs(output_dir, exist_ok=True)
     
 
-    q_table_path = os.path.join(output_dir, "q_table.pkl")
+    prefix = f"{artifact_prefix}_" if artifact_prefix else ""
+    q_table_path = os.path.join(output_dir, f"{prefix}q_table.pkl")
 
     if hasattr(agent, "q_shared") and agent.q_shared is not None:
         with open(q_table_path, "wb") as f:
@@ -89,15 +101,43 @@ def train(
 
     env_config = {
         "size": env.size,
+        "scenario": env.scenario,
         "agent_count": env.agent_count,
+        "forklift_count": env.forklift_count,
+        "forklift_move_prob": env.forklift_move_prob,
+        "adversary_policy": env.adversary_policy,
+        "adversary_move_prob": env.adversary_move_prob,
+        "adversary_max_moves": env.adversary_max_moves,
+        "adversary_learning_alpha": env.adversary_learning_alpha,
+        "adversary_learning_gamma": env.adversary_learning_gamma,
+        "adversary_learning_epsilon_start": env.adversary_learning_epsilon_start,
+        "adversary_learning_epsilon_end": env.adversary_learning_epsilon_end,
+        "adversary_learning_epsilon_decay_episodes": env.adversary_learning_epsilon_decay_episodes,
+        "adversary_learning_progress_reward_scale": env.adversary_learning_progress_reward_scale,
+        "adversary_learning_catch_reward": env.adversary_learning_catch_reward,
+        "adversary_learning_objective": env.adversary_learning_objective,
+        "adversary_enabled": env.adversary_enabled,
+        "adversary_random_tiebreak": env.adversary_random_tiebreak,
+        "step_penalty": env.step_penalty,
+        "obstacle_penalty": env.obstacle_penalty,
+        "collision_penalty": env.collision_penalty,
+        "forklift_penalty": env.forklift_penalty,
+        "adversary_penalty": env.adversary_penalty,
+        "pickup_reward": env.pickup_reward,
+        "delivery_reward": env.delivery_reward,
+        "distance_shaping_enabled": env.distance_shaping_enabled,
+        "distance_shaping_scale": env.distance_shaping_scale,
+        "include_relative_package_destination": env.include_relative_package_destination,
         "spill_count": env.spill_count,
         "starts": env.starts,
         "package_locations": env.package_locations,
         "destinations": env.destinations,
-        "obstacles": env.shelf_obstacles, 
-        "max_steps": env.max_steps
+        "forklift_starts": env.fixed_forklift_starts,
+        "adversary_start": env.fixed_adversary_start,
+        "obstacles": env.shelf_obstacles,
+        "max_steps": env.max_steps,
     }
-    config_path = os.path.join(output_dir, "env_config.pkl")
+    config_path = os.path.join(output_dir, f"{prefix}env_config.pkl")
     with open(config_path, "wb") as f:
         pickle.dump(env_config, f)
     print(f"[System] Environment Layout saved to: {config_path}")
