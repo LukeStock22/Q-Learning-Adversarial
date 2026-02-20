@@ -1,0 +1,15 @@
+project:
+  output_dir: outputs/learningadversary
+
+scenarios:
+  adversary:
+    adversary_policy: learning
+    adversary_move_prob: 1.0
+    adversary_max_moves: 1000
+    adversary_learning_alpha: 0.2
+    adversary_learning_gamma: 0.95
+    adversary_learning_epsilon_start: 0.2
+    adversary_learning_epsilon_end: 0.05
+    adversary_learning_epsilon_decay_episodes: 5000
+    adversary_learning_progress_reward_scale: 1.0
+    adversary_learning_catch_reward: 25.0

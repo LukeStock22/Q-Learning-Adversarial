@@ -1,0 +1,5 @@
+# Experiment: turn on distance shaping while keeping all other settings at defaults.
+
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
