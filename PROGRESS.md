@@ -41,9 +41,6 @@ Core system capabilities now in place:
 
 ## Key Implementation Lessons Learned
 
-1. **Configuration semantics matter more than expected**
-- A misinterpreted `adversary_max_moves` setting caused pathological behavior (immediate catches / degenerate training) until clarified and corrected.
-
 2. **OOD behavior was highly sensitive to tie-breaking**
 - Deterministic argmax tie-breaking in unseen states caused “frozen” behavior.
 - Random tie-breaks removed some artifacts, but did not solve generalization by itself.

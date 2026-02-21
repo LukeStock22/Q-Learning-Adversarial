@@ -24,7 +24,10 @@
 
 %%% Load required packages here (note that many are included already).
 
-\usepackage{balance} % for balancing columns on the final page
+\usepackage{balance} % for balancing columns on the final page]
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
+\usepackage{float}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -108,7 +111,7 @@ As this is a progress report and not a final result, we will mainly focus on dem
 
 \section{Introduction}
 
-Warehouse automation environments are dynamic, stochastic, and often adversarial in practice. A delivery robot must reach a package, pick it up, and deliver it while operating around traffic and disruptions (e.g., moving forklifts, blocked aisles, or strategic interference). The central problem in this project is not only whether an RL policy can solve one fixed environment, but whether a policy trained under one disturbance regime transfers robustly to unseen layouts and disturbance realizations.
+Warehouse automation environments are incredibly dynamic and even chaotic in practice. Increasingly popular delivery robots must reach a package, pick it up, and deliver it while operating around traffic and disruptions (e.g., moving forklifts, shelving, blocked aisles). The central problem in this project is not only whether an RL policy can solve one fixed environment, but whether a policy trained under one disturbance regime transfers robustly to unseen layouts and disturbance realizations.
 
 Motivated by robust/adversarial RL and dynamic-warehouse navigation literature \cite{pinto2017rarl,tessler2019actionrobust,kristiansson2025warehouse}, we frame our work as a controlled comparison between two training strategies in the same gridworld task: (i) training against stochastic disturbances (``nature''), and (ii) training against an active adversary (``adversary''). We evaluate both trained policies under identical protocols with in-distribution evaluation (ID-A: same base layout family as training) and out-of-distribution evaluation (OOD-layout: unseen sampled layouts).
 
@@ -118,153 +121,332 @@ The main takeaway at this stage is that we have substantially improved infrastru
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{The Preamble}
+\section{Definitions and Experimental Setup}
 
-You will be assigned a submission number when you register the abstract 
-of your paper on \textit{OpenReview}. Include this number in your 
-document using the `\verb|\acmSubmissionID|' command.
+\subsection{Task Definition}
+We model a warehouse as a discrete $5\times5$ gridworld. The primary learning agent must complete a pickup-and-delivery task: navigate to a package location, pick up the package, and then deliver it to a designated destination cell while minimizing cumulative cost. The environment includes static shelves (blocked cells) and dynamic hazards, and an episode terminates either on successful delivery, collision with a terminal hazard, or timeout.
 
-Then use the familiar commands to specify the title and authors of your
-paper in the preamble of the document. The title should be appropriately 
-capitalised (meaning that every `important' word in the title should 
-start with a capital letter). For the final version of your paper, make 
-sure to specify the affiliation and email address of each author using 
-the appropriate commands. Specify an affiliation and email address 
-separately for each author, even if two authors share the same 
-affiliation. You can specify more than one affiliation for an author by 
-using a separate `\verb|\affiliation|' command for each affiliation.
+At each step, the agent selects one of four cardinal actions (up, right, down, left). Rewards combine movement cost and task progress:
+\begin{itemize}
+    \item negative per-step cost and obstacle penalties,
+    \item positive pickup and delivery rewards,
+    \item optional shaping based on distance-to-objective progress.
+\end{itemize}
+This reward structure makes the objective ``deliver quickly and safely'' rather than simply ``eventually deliver.''
 
-Provide a short abstract using the `\texttt{abstract}' environment.
- 
-Finally, specify a small number of keywords characterising your work, 
-using the `\verb|\keywords|' command. 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\section{The Body of the Paper}
-
-For help with typesetting the body of your paper in \LaTeX\@, please 
-make use of the familiar resources~\cite{Lam94}. In this section we 
-merely highlight a few specific features. 
-
-\subsection{Mathematical Expressions}
-
-You can typeset all sorts of in-line mathematical expressions 
-with the usual \verb|$...$| construct, as in 
-$\Diamond\Diamond\varphi \rightarrow \Diamond\varphi$ or 
-$\boldsymbol{R} = (R_1,\ldots,R_n)$.
-For more complex expressions, it may often be preferable to use one of
-the various equation-type environments available in \LaTeX\@, as shown 
-in the following example:
-%
-\begin{eqnarray}
-Z_i & = & \frac{u_i(x_i) - u_i(x_{-i})}{u_i(x_i)}
-\end{eqnarray}
-%
-Here is a second example for an equation: 
-%
-\begin{eqnarray}\label{eq:vcg}
-p_i(\boldsymbol{\hat{v}}) & = &
-\sum_{j \neq i} \hat{v}_j(f(\boldsymbol{\hat{v}}_{-i})) - 
-\sum_{j \neq i} \hat{v}_j(f(\boldsymbol{\hat{v}})) 
-\end{eqnarray}
-%
-Use the usual combination of `\verb|\label|' and `\verb|\ref|' to refer
-to numbered equations, such as Equation~(\ref{eq:vcg}) above. Of course,
-introducing numbers in the first place is only helpful if you in fact 
-need to refer back to the equation in question elsewhere in the paper.
-
-
-\subsection{Tables and Figures}
-
-Use the `\texttt{table}' environment (or its variant `\texttt{table*}')
-in combination with the `\texttt{tabular}' environment to typeset tables
-as floating objects. The `\texttt{aamas}' document class includes the 
-`\texttt{booktabs}' package for preparing high-quality tables. Tables 
-are often placed at the top of a page near their initial cite, as done 
-here for Table~\ref{tab:locations}.
-
-\begin{table}[t]
-	\caption{Locations of the first five editions of AAMAS}
-	\label{tab:locations}
-	\begin{tabular}{rll}\toprule
-		\textit{Year} & \textit{City} & \textit{Country} \\ \midrule
-		2002 & Bologna & Italy \\
-		2003 & Melbourne & Australia \\
-		2004 & New York City & USA \\
-		2005 & Utrecht & The Netherlands \\
-		2006 & Hakodate & Japan \\ \bottomrule
-	\end{tabular}
-\end{table}
-
-The caption of a table should be placed \emph{above} the table. 
-Always use the `\verb|\midrule|' command to separate header rows from 
-data rows, and use it only for this purpose. This enables assistive 
-technologies to recognise table headers and support their users in 
-navigating tables more easily.
-
-%%% The following command should be issued somewhere in the first column 
-%%% of the final page of your paper.
-\balance
-
-Use the `\texttt{figure}' environment for figures. If your figure 
-contains third-party material, make sure to clearly identify it as such.
-Every figure should include a caption, and this caption should be placed 
-\emph{below} the figure itself, as shown here for Figure~\ref{fig:logo}.
-
-\begin{figure}[h]
+\begin{figure}[H]
   \centering
-  \includegraphics[width=0.75\linewidth]{aamas2026logo}
-  \caption{The logo of AAMAS 2026}
-  \label{fig:logo}
-  \Description{Logo of AAMAS 2026 -- The 25th International Conference on Autonomous Agents and Multiagent Systems.}
+  \fbox{\parbox{0.93\linewidth}{
+  \textbf{Reward configuration used in experiments.}
+
+  \vspace{0.5em}
+  \begin{itemize}\itemsep0pt \parskip0pt \parsep0pt
+    \item Step penalty: \texttt{-2.0}
+    \item Obstacle penalty: \texttt{-3.0}
+    \item Adversary/Forklift penalty: \texttt{-50.0}
+    \item Pickup reward: \texttt{25.0}
+    \item Delivery reward: \texttt{100.0}
+    \item Distance shaping: \texttt{disabled} (\texttt{scale = 0.0})
+  \end{itemize}
+  }}
+  \caption{Reward and penalty values used for training and evaluation.}
+  \label{fig:rewards}
+  \Description{Boxed list of reward and penalty values: step penalty -2.0, obstacle penalty -3.0, forklift penalty -50.0, adversary penalty -50.0, pickup reward 25.0, delivery reward 100.0, distance shaping disabled with scale 0.0.}
 \end{figure}
 
-In addition, every figure should also have a figure description, unless
-it is purely decorative. Use the `\verb|\Description|' command for this 
-purpose. These descriptions will not be printed but can be used to 
-convey what's in an image to someone who cannot see it. They are also 
-used by search engine crawlers for indexing images, and when images 
-cannot be loaded. A figure description must consist of unformatted plain 
-text of up to 2000~characters. For example, the definition of 
-Figure~\ref{fig:logo} in the source file of this document includes the 
-following description: ``Logo of AAMAS 2026 -- The 25th International Conference on Autonomous Agents and Multiagent Systems.'' For more information on how best to write figure descriptions 
-and why doing so is important, consult the information available here: 
-%
-\begin{center}
-\url{https://www.acm.org/publications/taps/describing-figures/}
-\end{center}
-%
-The use of colour in figures and graphs is permitted, provided they 
-remain readable when printed in greyscale and provided they are 
-intelligible also for people with a colour vision deficiency.
+\begin{figure}[H]
+  \centering
+  % Put your image file in the Overleaf project (e.g., under figs/)
+  \includegraphics[width=0.85\linewidth]{env-example.png}
+  \caption{Example warehouse gridworld layout for the adversary scenario. Colors indicate the start cell, package location, destination, shelf (blocked) cells, and the adversary position.}
+  \label{fig:env-map-example}
+  \Description{A 5x5 gridworld visualization showing a start cell in blue, a package in yellow, a destination in green, shelf obstacles in dark gray, and an adversary in magenta, with a legend.}
+\end{figure}
+
+
+\subsection{Disturbance Regimes}
+We evaluate two disturbance regimes that define the training world:
+\begin{itemize}
+    \item \textbf{Nature scenario:} static shelves with stochastic `forklift' hazards.
+    \item \textbf{Adversary scenario:} static shelves with an active adversary hazard.
+\end{itemize}
+
+The adversary is configurable as:
+\begin{samepage}
+\begin{itemize}
+    \item \textbf{Deterministic pursuit} (greedy Manhattan-distance minimization with random tie-breaks), or
+    \item \textbf{Learning adversary} (tabular learner with either heuristic objective or strict zero-sum objective against the delivery agent).
+\end{itemize}
+\end{samepage}
+One of our current comparisons focuses on how the \emph{training regime} affects robustness of the delivery policy.
+
+\subsection{Policy Comparison Protocol}
+For each run in comparison mode, we train two separate delivery policies:
+\begin{enumerate}
+    \item a policy trained in the nature scenario;
+    \item a policy trained in the adversary scenario.
+\end{enumerate}
+Both are then evaluated in a cross-scenario matrix (nature-on-nature, nature-on-adversary, adversary-on-nature, adversary-on-adversary) under:
+
+\begin{itemize}
+    \item \textbf{ID-A:} same base layout family used during training;
+    \item \textbf{OOD-layout:} unseen sampled layouts (aggregated across multiple layouts).
+\end{itemize}
+
+We report average return, collision count, delivered packages, and average steps per episode.  To complement endpoint metrics, we also track reward-learning dynamics over training (see Figure~\ref{fig:learning-curves-placeholder}).
+
+\begin{figure}[t]
+  \centering
+  % Replace filename with your exported learning-curves image.
+  \includegraphics[width=0.85\linewidth]{learning-curves.png}
+  \caption{Policy learning curve of reward trajectory for the nature-trained agent.}
+  \label{fig:learning-curves-placeholder}
+  \Description{Policy learning curve of reward trajectory for the nature-trained agent.}
+\end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Citations and References}
-  
-The use of the \BibTeX\ to prepare your list of references is highly 
-recommended. To include the references at the end of your document, put 
-the following two commands just before the `\verb|\end{document}|' 
-command in your source file:
-%
-\begin{verbatim}
-   \bibliographystyle{ACM-Reference-Format}
-   \bibliography{sample}
-\end{verbatim}
-%
-Here we assume that `\texttt{sample.bib}' is the name of your 
-\BibTeX\ file. Use the `\verb|\cite|' command to produce citations 
-to your references. Here are a few examples for citations of journal 
-articles~\cite{GrKr96,WoJe95}, books~\cite{Knu97}, articles in 
-conference proceedings~\cite{Hag1993}, technical reports~\cite{Har78},
-Master's and PhD theses~\cite{Ani03,Cla85}, online videos~\cite{Oba08}, 
-datasets~\cite{AnMC13}, and patents~\cite{Sci09}. Both citations and 
-references are numbered by default. 
+\section{Infrastructure and Experiment Pipeline}
 
-Make sure you provide complete and correct bibliographic information 
-for all your references, and list authors with their full names 
-(``Donald E.\ Knuth'') rather than just initials (``D.\ E.\ Knuth''). 
+Our experimentation workflow is configuration-driven and designed to support controlled comparisons with minimal manual code edits. The repository uses a baseline configuration (\path{configs/default.yaml}) and experiment-specific override files (\path{configs/experiments/*.yaml}). At run time, the override is deep-merged onto the default configuration, and the exact merged configuration is saved alongside outputs as \path{config_used.yaml}. This is important for reproducibility because every reported result is tied to an explicit, versioned set of parameters.
+
+\subsection{Run Workflow}
+The primary execution path is:
+\begin{itemize}
+    \item create or edit an override file in \path{configs/experiments/},
+    \item run experiment script with \path{ --only <experiment_name>},
+    \item collect outputs from \path{outputs/<experiment_name>/}.
+\end{itemize}
+
+In comparison mode, one command trains two separate delivery policies (nature-trained and adversary-trained), then evaluates both policies on both scenarios for ID-A and OOD-layout. OOD-layout metrics are aggregated over \path{eval.ood_layout_count} sampled layouts (default currently set to 10 in baseline runs).
+
+\subsection{Configurable Knobs in Current Pipeline}
+The current infrastructure exposes the following tunable groups:
+\begin{itemize}
+    \item \textbf{Core run budget:} training/evaluation episode counts
+    \item \textbf{Agent learning:} $\alpha$, $\gamma$, epsilon schedule, shared vs non-shared Q-table (if testing multiple delivery agents).
+    \item \textbf{Task/reward model:} step cost, obstacle penalties, hazard penalties, pickup/delivery rewards, distance shaping.
+    \item \textbf{State representation:} optional relative package/destination context features.
+    \item \textbf{Scenario dynamics:} forklift movement probability, adversary policy type (deterministic vs learned), adversary move probability, move budget, and adversary-learning hyperparameters/objective (heuristic vs zero-sum).
+    \item \textbf{Evaluation controls:} ID-A/OOD protocol parameters and OOD layout count.
+\end{itemize}
+
+\subsection{Artifacts and Diagnostics Collected Per Run}
+Each experiment directory contains structured outputs that support quantitative and qualitative analysis:
+\begin{itemize}
+    \item \texttt{csv/}: training rewards and cross-scenario matrices,
+    \item \texttt{learningcurves/}: reward trajectories over episodes,
+    \item \texttt{gif/}: rollout animations for ID-A and OOD cross-scenario pairs,
+    \item \texttt{png/}: static layout snapshots,
+    \item \texttt{txt/metrics.txt}: compact run summary (including return, collisions, deliveries, and average steps),
+    \item \texttt{pkl/}: serialized policy tables and environment configs for replay/debugging.
+\end{itemize}
+
+This infrastructure has been essential for debugging behavior-level issues (e.g., no-move policies, tie-break artifacts, adversary learning pathologies) and systematically testing different configurations.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  node distance=4.5mm,
+  >=Latex,
+  box/.style={draw, rounded corners, align=center, font=\footnotesize, text width=0.90\columnwidth, minimum height=7mm, inner sep=2.5pt},
+  io/.style={box, fill=blue!5},
+  proc/.style={box, fill=green!5},
+  outbox/.style={box, fill=orange!8},
+  arr/.style={->, thick}
+]
+
+% Vertical single-column flow
+\node[io] (default) {\textbf{Base config:} \texttt{configs/default.yaml}};
+\node[io, below=of default] (override) {\textbf{Override config:} \texttt{configs/experiments/\textless name\textgreater.yaml}};
+\node[proc, below=of override] (runner) {\textbf{Run command:} \texttt{python scripts/run\_experiments.py --only \textless name\textgreater}\\Deep-merge configs and save \texttt{config\_used.yaml}};
+\node[proc, below=of runner] (main) {\textbf{Main execution:} \texttt{python -m qlearning\_adversarial.main}\\Comparison mode (train nature + adversary policies)};
+\node[proc, below=of main] (eval) {\textbf{Evaluation protocol:} cross-scenario matrix on ID-A and OOD-layout (aggregated over \texttt{ood\_layout\_count})};
+\node[outbox, below=of eval] (artifacts) {\textbf{Artifacts under} \texttt{outputs/\textless experiment\_name\textgreater/}:\\
+\texttt{csv/} (rewards + matrices), \texttt{learningcurves/}, \texttt{gif/}, \texttt{png/}, \texttt{txt/metrics.txt}, \texttt{pkl/}};
+
+\draw[arr] (default.south) -- (override.north);
+\draw[arr] (override.south) -- (runner.north);
+\draw[arr] (runner.south) -- (main.north);
+\draw[arr] (main.south) -- (eval.north);
+\draw[arr] (eval.south) -- (artifacts.north);
+
+\end{tikzpicture}
+\caption{Experiment pipeline used in this project. A baseline config is merged with an experiment override, then comparison-mode training and cross-scenario evaluation produce structured artifacts under \texttt{outputs/\textless experiment\_name\textgreater/}.}
+\label{fig:pipeline}
+\Description{Flow diagram showing configuration merge, experiment execution, policy training, ID-A and OOD evaluation, and generated artifacts including csv, learning curves, gifs, text metrics, and pkl files.}
+\end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Interim Experiments and Lessons Learned}
+We have run a sequence of controlled experiments that vary disturbance type, reward shaping, state context, and adversary objective.
+
+\subsection{Nature Baseline Reference}
+To ground the comparisons, we first note the delivery-policy performance when trained and evaluated in the nature setting. In the baseline run (\texttt{outputs/default}), the nature-trained policy achieves strong ID-A performance (\texttt{id\_a\_nature\_on\_nature\_reward = 86.80}, \texttt{47/50} deliveries, \texttt{3/50} collisions), but poor OOD transfer (\texttt{ood\_layout\_nature\_on\_nature\_reward = -433.67}, \texttt{28/250} deliveries). This provides an initial reference point for interpreting whether adversary-based training actually improves robustness beyond stochastic-disturbance training.
+
+\subsection{Deterministic vs Learned Adversary}
+Initially we wanted to determine how our adversary should behave. Our baseline deterministic-adversary run (\path{outputs/default}) produced strong same-scenario ID-A performance for the adversary-trained policy (\path{id_a_adversary_on_adversary_reward = 94.40}), but poor OOD robustness (\path{ood_layout_adversary_on_adversary_reward = -101.51}).
+
+
+When we switched to a learned adversary (\texttt{outputs/\allowbreak learning\allowbreak adversary}), adversary-trained performance dropped substantially in both ID-A and OOD (\texttt{33.84} and \texttt{-119.32}, respectively). This indicates that, in the current tabular setup, a learned adversary does not yet provide stronger or cleaner training pressure than deterministic pursuit. However, we want to attempt to move forward with a learned adversary. Our ultimate goal is to train against an adversary that learns to and actively tries to produce difficult circumstances for the agent. 
+
+\subsection{Distance Shaping and Increased Context}
+Distance shaping alone (\texttt{outputs/distance\_shaping}) improved ID-A in adversary-on-adversary (\texttt{108.66}), but did not resolve the OOD falloff in performance.  
+
+Adding relative package/destination context without shaping (\texttt{outputs/inc\_context}) produced brittle behavior, including degenerate OOD outcomes (e.g., \texttt{-400.00} with zero deliveries in some cells), consistent with sparse coverage in an expanded state space.  
+
+Combining context + shaping (\texttt{outputs/\allowbreak inc\_\allowbreak context\_\allowbreak distance\_\allowbreak shaping}) gave the most promising OOD trend, improving adversary-on-adversary OOD to \texttt{-61.91} (vs \texttt{-101.51} baseline), though still far from robust.
+
+\subsection{General-Sum vs Zero-Sum Learned Adversary}
+After reviewing the animations of evaluation episodes, we noticed the adversarial agent frequently did not move or take action that indicated it had a goal of interfering with the agent. This led to us adjusting adversary learning parameters (e.g. more discovery actions early on to decrease context sparseness) and experimenting with a zero-sum game.
+
+For learned-adversary experiments with context + shaping:
+\begin{itemize}
+    \item \textbf{General-sum} variant (\texttt{outputs/\allowbreak la\_\allowbreak ic\_\allowbreak ds}) achieved
+    \texttt{id\_\allowbreak a\_\allowbreak adversary\_\allowbreak on\_\allowbreak adversary = 91.42} and
+    \texttt{ood\_\allowbreak layout\_\allowbreak adversary\_\allowbreak on\_\allowbreak adversary = -63.61}.
+    \item \textbf{Zero-sum} variant (\texttt{outputs/\allowbreak la\_\allowbreak zs\_\allowbreak ic\_\allowbreak ds}) used a larger training budget (20k episodes) and 10 OOD layouts. It achieved
+    \texttt{id\_\allowbreak a\_\allowbreak adversary\_\allowbreak on\_\allowbreak adversary = 66.38} and
+    \texttt{ood\_\allowbreak layout\_\allowbreak adversary\_\allowbreak on\_\allowbreak adversary = -103.32}.
+\end{itemize}
+
+In the zero-sum run, low ID-A collisions (\texttt{3/50}) and high deliveries (\texttt{47/50}) coexisted with lower return because average episode length was much larger (\texttt{24.82} steps), highlighting that efficiency penalties dominate reward when trajectories are long. Once again, though with our current configuration this decreases performance, it seems to produce much more reasonable adversary behavior. We believe that it is possible that through additional experimentation and tinkering of configuration, having a more difficult (but constrained) adversary could benefit the robustness of the learned policy.
+
+\subsection{Lessons and Current Failure Modes}
+\begin{itemize}
+    \item \textbf{OOD generalization remains the dominant weakness.} Across all variants, OOD returns are strongly negative and collision rates remain high.
+    \item \textbf{Learned adversary is not yet reliably stronger than deterministic pursuit.} Current adversary-learning dynamics are sensitive to objective and hyperparameters.
+    \item \textbf{State enrichment helps only with sufficient learning signal.} Relative context without shaping can hurt due to state explosion; context + shaping is better but still not sufficient.
+    \item \textbf{Reward must be interpreted with steps.} We added average-step reporting because return alone hides path inefficiency effects.
+    \item \textbf{Zero-sum improves pressure, not OOD robustness.} The adversary behaves more anti-agent, but OOD returns remain strongly negative.
+\end{itemize}
+
+\begin{table}[t]
+\caption{Representative same-scenario results from completed runs.}
+\label{tab:interim-core}
+\centering
+\footnotesize
+\begin{tabular}{lcc}
+\toprule
+\textbf{Experiment} & \textbf{ID-A Adv$\rightarrow$Adv} & \textbf{OOD Adv$\rightarrow$Adv} \\
+\midrule
+\texttt{default} & 94.40 & -101.51 \\
+\texttt{learningadversary} & 33.84 & -119.32 \\
+\texttt{la\_ic\_ds} & 91.42 & -63.61 \\
+\texttt{la\_zs\_ic\_ds} & 66.38 & -103.32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Example Run Statistics and Cross-Matrix Output}
+To make the reporting format concrete, we include one full example from \texttt{la\_zs\_ic\_ds}. Table~\ref{tab:la-zs-summary} shows the immediate policy-level summary printed at the end of a run. Tables~\ref{tab:la-zs-ida} and~\ref{tab:la-zs-ood} show the ID-A and OOD cross-scenario matrices. This is the first place in the report where the full cross-matrix structure is shown explicitly, rather than only referenced in text.
+
+\begin{table}[H]
+\caption{Policy-level summary metrics for \texttt{la\_zs\_ic\_ds}.}
+\label{tab:la-zs-summary}
+\centering
+\footnotesize
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Policy} & \textbf{Final} & \textbf{Last-20} & \textbf{ID-A} & \textbf{OOD} \\
+\midrule
+Nature Policy & 101.00 & 99.30 & 95.78 & -105.16 \\
+Adversary Policy & 114.00 & 102.70 & 66.38 & -103.32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\caption{ID-A cross-scenario matrix for \texttt{la\_zs\_ic\_ds} (50 eval episodes).}
+\label{tab:la-zs-ida}
+\centering
+\footnotesize
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Train$\rightarrow$Eval} & \textbf{Avg Reward} & \textbf{Coll./ep} & \textbf{Deliv./ep} & \textbf{Avg Steps} \\
+\midrule
+nature$\rightarrow$nature & 95.78 & 0.08 & 0.92 & 13.44 \\
+nature$\rightarrow$adversary & 93.54 & 0.06 & 0.94 & 16.10 \\
+adversary$\rightarrow$nature & 92.94 & 0.08 & 0.92 & 14.52 \\
+adversary$\rightarrow$adversary & 66.38 & 0.06 & 0.94 & 24.82 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\caption{OOD-layout cross-scenario matrix for \texttt{la\_zs\_ic\_ds} (10 layouts, 500 eval episodes total).}
+\label{tab:la-zs-ood}
+\centering
+\footnotesize
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Train$\rightarrow$Eval} & \textbf{Avg Reward} & \textbf{Coll./ep} & \textbf{Deliv./ep} & \textbf{Avg Steps} \\
+\midrule
+nature$\rightarrow$nature & -105.16 & 0.82 & 0.17 & 43.62 \\
+nature$\rightarrow$adversary & -113.15 & 0.84 & 0.15 & 45.52 \\
+adversary$\rightarrow$nature & -104.29 & 0.84 & 0.16 & 42.01 \\
+adversary$\rightarrow$adversary & -103.32 & 0.81 & 0.19 & 43.87 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{Open Challenges and Next Steps}
+
+Our main open challenge is still OOD robustness. Even when ID-A metrics are strong, performance drops sharply under unseen layouts. Additionally, learned-adversary behavior remains inconsistent across objectives and hyperparameters.
+
+Near-term next steps are:
+\begin{itemize}
+    \item \textbf{Stabilize learned adversary training:} run focused sweeps for adversary epsilon schedule, move probability, and objective settings (heuristic vs zero-sum).
+    \item \textbf{Improve protocol reliability:} repeat key experiments across multiple seeds and report mean/variance rather than single-run outcomes.
+    \item \textbf{Target OOD directly:} continue to run new experiments and compare matched-budget runs under the same OOD-layout count.
+    \item \textbf{Increase environment complexity:} consider holding steps constant and measuring throughput (packages delivered per episode before max steps or collision occurs), adding multiple delivery agents, or increasing static 'shelving' obstacles
+\end{itemize}
+
+These steps are intended to answer the central question more rigorously: when, if ever, adversarial training improves generalization beyond stochastic-disturbance training.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{thebibliography}{9}
+
+\bibitem{pinto2017rarl}
+L.~Pinto, J.~Davidson, R.~Sukthankar, and A.~Gupta,
+``Robust Adversarial Reinforcement Learning,''
+in \textit{Proceedings of the 34th International Conference on Machine Learning (ICML)},
+PMLR, vol.~70, pp.~2817--2826, 2017.
+\url{https://proceedings.mlr.press/v70/pinto17a/pinto17a.pdf}.
+
+\bibitem{tessler2019actionrobust}
+C.~Tessler, Y.~Efroni, and S.~Mannor,
+``Action Robust Reinforcement Learning and Applications in Continuous Control,''
+in \textit{Proceedings of the 36th International Conference on Machine Learning (ICML)},
+PMLR, vol.~97, 2019.
+\url{https://proceedings.mlr.press/v97/tessler19a/tessler19a.pdf}.
+
+\bibitem{kristiansson2025warehouse}
+L.~Kristiansson and F.~Winkelmann,
+``Comparative Analysis of A* and Q-Learning Algorithms for Robot Path Planning in Dynamic Warehouse Environments,''
+Bachelor's thesis, KTH Royal Institute of Technology, 2025.
+\url{https://www.diva-portal.org/smash/get/diva2:1985734/FULLTEXT01.pdf}.
+
+\bibitem{paczolay2021pursuitevasion}
+G.~Paczolay and I.~Harmati,
+``A Simplified Pursuit-evasion Game with Reinforcement Learning,''
+\textit{Periodica Polytechnica Electrical Engineering and Computer Science},
+vol.~65, no.~2, pp.~160--166, 2021.
+doi:10.3311/PPee.16540.
+\url{https://pp.bme.hu/eecs/article/download/16540/9023/95223}.
+
+\bibitem{watkins1992qlearning}
+C.~J.~C.~H.~Watkins and P.~Dayan,
+``Q-learning,''
+\textit{Machine Learning},
+vol.~8, no.~3--4, pp.~279--292, 1992.
+doi:10.1007/BF00992698.
+
+\end{thebibliography}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -273,20 +455,20 @@ for all your references, and list authors with their full names
 %%% ensures the proper identification of the section in the article 
 %%% metadata as well as the consistent spelling of the heading.
 
-\begin{acks}
-If you wish to include any acknowledgments in your paper (e.g., to 
-people or funding agencies), please do so using the `\texttt{acks}' 
-environment. Note that the text of your acknowledgments will be omitted
-if you compile your document with the `\texttt{anonymous}' option.
-\end{acks}
+% \begin{acks}
+% If you wish to include any acknowledgments in your paper (e.g., to 
+% people or funding agencies), please do so using the `\texttt{acks}' 
+% environment. Note that the text of your acknowledgments will be omitted
+% if you compile your document with the `\texttt{anonymous}' option.
+% \end{acks}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% The next two lines define, first, the bibliography style to be 
 %%% applied, and, second, the bibliography file to be used.
 
-\bibliographystyle{ACM-Reference-Format} 
-\bibliography{sample}
+% \bibliographystyle{ACM-Reference-Format} 
+% \bibliography{sample}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
