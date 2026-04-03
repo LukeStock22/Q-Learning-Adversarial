@@ -1,0 +1,17 @@
+project:
+  seed: 123
+
+eval:
+  ood_layout_count: 30
+
+run:
+  tier: debug
+  debug:
+    train_episodes: 20000
+    eval_episodes: 100
+
+experiment: {}
+training: {}
+rewards: {}
+state_features: {}
+scenarios: {}

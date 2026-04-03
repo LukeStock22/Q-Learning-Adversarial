@@ -1,0 +1,18 @@
+project:
+  seed: 789
+  grid_size: 7
+
+run:
+  tier: debug
+  debug:
+    train_episodes: 40000
+    eval_episodes: 50
+
+eval:
+  ood_layout_count: 15
+
+experiment: {}
+training: {}
+rewards: {}
+state_features: {}
+scenarios: {}
