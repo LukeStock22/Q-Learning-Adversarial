@@ -122,6 +122,12 @@ def build_env(
                 GridworldEnv.DEFAULT_ADVERSARY_LEARNING_OBJECTIVE,
             )
         ),
+        adversary_freeze_episode=int(
+            scenario_cfg.get(
+                "adversary_freeze_episode",
+                GridworldEnv.DEFAULT_ADVERSARY_FREEZE_EPISODE,
+            )
+        ),
         adversary_random_tiebreak=bool(scenario_cfg.get("adversary_random_tiebreak", True)),
         adversary_enabled=bool(scenario_cfg.get("adversary_enabled", False)),
         step_penalty=float(rewards_cfg.get("step_penalty", GridworldEnv.DEFAULT_STEP_PENALTY)),
@@ -147,6 +153,20 @@ def build_env(
                 GridworldEnv.DEFAULT_INCLUDE_RELATIVE_PACKAGE_DESTINATION,
             )
         ),
+        adversary_proximity_radius=int(
+            state_features_cfg.get(
+                "adversary_proximity_radius",
+                GridworldEnv.DEFAULT_ADVERSARY_PROXIMITY_RADIUS,
+            )
+        ),
+        include_coarse_destination_direction=bool(
+            state_features_cfg.get(
+                "include_coarse_destination_direction",
+                GridworldEnv.DEFAULT_INCLUDE_COARSE_DESTINATION_DIRECTION,
+            )
+        ),
+        shelf_count=int(training.get("shelf_count", 1)),
+        adversary_count=int(scenario_cfg.get("adversary_count", 1)),
     )
 
 
@@ -257,10 +277,11 @@ def run_comparison(config: dict) -> None:
     def sample_layout_bundle(seed: int) -> dict:
         """Sample one fully specified layout bundle shared across scenarios."""
         seed_everything(seed)
+        nature_cfg = scenarios.get(GridworldEnv.SCENARIO_NATURE, {})
         shelf_sampler = build_env(
             project,
             training,
-            scenarios[GridworldEnv.SCENARIO_NATURE],
+            nature_cfg,
             rewards_cfg=rewards_cfg,
             state_features_cfg=state_features_cfg,
         )
@@ -268,7 +289,7 @@ def run_comparison(config: dict) -> None:
         layout_sampler = build_env(
             project,
             training,
-            scenarios[GridworldEnv.SCENARIO_NATURE],
+            nature_cfg,
             rewards_cfg=rewards_cfg,
             state_features_cfg=state_features_cfg,
             obstacles=set(shelves),
@@ -285,7 +306,14 @@ def run_comparison(config: dict) -> None:
             "adversary_start": adversary_start,
         }
 
+    num_train_layouts = max(1, int(training.get("num_train_layouts", 1)))
+
     layout_train = sample_layout_bundle(base_seed)
+    extra_train_layouts = [
+        sample_layout_bundle(base_seed + 10000 + i) for i in range(num_train_layouts - 1)
+    ]
+    all_train_layouts = [layout_train] + extra_train_layouts
+
     layout_ood_bundles = [
         sample_layout_bundle(base_seed + 5000 + idx) for idx in range(ood_layout_count)
     ]
@@ -296,24 +324,28 @@ def run_comparison(config: dict) -> None:
 
     for idx, scenario_name in enumerate(scenario_order):
         seed_everything(base_seed + idx * 100)
-        env = build_env(
-            project,
-            training,
-            scenarios[scenario_name],
-            rewards_cfg=rewards_cfg,
-            state_features_cfg=state_features_cfg,
-            obstacles=set(layout_train["obstacles"]),
-            starts=layout_train["starts"],
-            package_locations=layout_train["package_locations"],
-            destinations=layout_train["destinations"],
-            forklift_starts=layout_train["forklift_starts"],
-            adversary_start=layout_train["adversary_start"],
-        )
+        train_envs = [
+            build_env(
+                project,
+                training,
+                scenarios.get(scenario_name, {}),
+                rewards_cfg=rewards_cfg,
+                state_features_cfg=state_features_cfg,
+                obstacles=set(layout_bundle["obstacles"]),
+                starts=layout_bundle["starts"],
+                package_locations=layout_bundle["package_locations"],
+                destinations=layout_bundle["destinations"],
+                forklift_starts=layout_bundle["forklift_starts"],
+                adversary_start=layout_bundle["adversary_start"],
+            )
+            for layout_bundle in all_train_layouts
+        ]
+        env = train_envs[0]
         agent = build_agent(env, training)
 
-        print(f"Training policy on '{scenario_name}' scenario")
+        print(f"Training policy on '{scenario_name}' scenario ({num_train_layouts} layout(s))")
         rewards = train(
-            env,
+            train_envs if num_train_layouts > 1 else env,
             agent,
             episodes=train_episodes,
             max_steps=int(training.get("max_steps", 200)),
@@ -352,7 +384,7 @@ def run_comparison(config: dict) -> None:
                     eval_env = build_env(
                         project,
                         training,
-                        scenarios[eval_name],
+                        scenarios.get(eval_name, {}),
                         rewards_cfg=rewards_cfg,
                         state_features_cfg=state_features_cfg,
                         obstacles=set(layout_bundle["obstacles"]),
@@ -468,7 +500,7 @@ def run_comparison(config: dict) -> None:
             ida_env = build_env(
                 project,
                 training,
-                scenarios[eval_name],
+                scenarios.get(eval_name, {}),
                 rewards_cfg=rewards_cfg,
                 state_features_cfg=state_features_cfg,
                 obstacles=set(layout_train["obstacles"]),
@@ -488,7 +520,7 @@ def run_comparison(config: dict) -> None:
             ood_env = build_env(
                 project,
                 training,
-                scenarios[eval_name],
+                scenarios.get(eval_name, {}),
                 rewards_cfg=rewards_cfg,
                 state_features_cfg=state_features_cfg,
                 obstacles=set(layout_ood["obstacles"]),
@@ -584,6 +616,12 @@ def run_single(config: dict) -> None:
             training.get(
                 "adversary_learning_objective",
                 GridworldEnv.DEFAULT_ADVERSARY_LEARNING_OBJECTIVE,
+            )
+        ),
+        "adversary_freeze_episode": int(
+            training.get(
+                "adversary_freeze_episode",
+                GridworldEnv.DEFAULT_ADVERSARY_FREEZE_EPISODE,
             )
         ),
         "adversary_random_tiebreak": bool(training.get("adversary_random_tiebreak", True)),

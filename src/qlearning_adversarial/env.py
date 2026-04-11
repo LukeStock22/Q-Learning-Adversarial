@@ -78,6 +78,9 @@ class GridworldEnv:
     DEFAULT_ADVERSARY_LEARNING_PROGRESS_REWARD_SCALE = 1.0
     DEFAULT_ADVERSARY_LEARNING_CATCH_REWARD = 25.0
     DEFAULT_ADVERSARY_LEARNING_OBJECTIVE = ADVERSARY_OBJECTIVE_HEURISTIC
+    DEFAULT_ADVERSARY_FREEZE_EPISODE = 0  # 0 = never freeze
+    DEFAULT_ADVERSARY_PROXIMITY_RADIUS = 0  # 0 = full position; >0 = 5-bucket directional proximity
+    DEFAULT_INCLUDE_COARSE_DESTINATION_DIRECTION = False  # octant direction to pkg/dest (9×9=81 values)
 
     # Render layer values.
     RENDER_EMPTY = 0
@@ -118,6 +121,7 @@ class GridworldEnv:
         adversary_learning_progress_reward_scale: float = DEFAULT_ADVERSARY_LEARNING_PROGRESS_REWARD_SCALE,
         adversary_learning_catch_reward: float = DEFAULT_ADVERSARY_LEARNING_CATCH_REWARD,
         adversary_learning_objective: str = DEFAULT_ADVERSARY_LEARNING_OBJECTIVE,
+        adversary_freeze_episode: int = DEFAULT_ADVERSARY_FREEZE_EPISODE,
         adversary_enabled: bool | None = None,
         step_penalty: float = DEFAULT_STEP_PENALTY,
         obstacle_penalty: float = DEFAULT_OBSTACLE_PENALTY,
@@ -129,6 +133,10 @@ class GridworldEnv:
         distance_shaping_enabled: bool = DEFAULT_DISTANCE_SHAPING_ENABLED,
         distance_shaping_scale: float = DEFAULT_DISTANCE_SHAPING_SCALE,
         include_relative_package_destination: bool = DEFAULT_INCLUDE_RELATIVE_PACKAGE_DESTINATION,
+        adversary_proximity_radius: int = DEFAULT_ADVERSARY_PROXIMITY_RADIUS,
+        include_coarse_destination_direction: bool = DEFAULT_INCLUDE_COARSE_DESTINATION_DIRECTION,
+        shelf_count: int = 1,
+        adversary_count: int = 1,
     ) -> None:
         self.size = size
         self.agent_count = agent_count
@@ -142,6 +150,10 @@ class GridworldEnv:
             self.ADVERSARY_OBJECTIVE_ZERO_SUM,
         ):
             raise ValueError(f"Unknown adversary learning objective: {adversary_learning_objective}")
+
+        self.adversary_count = max(1, int(adversary_count))
+        if self.adversary_count > 1 and adversary_policy == self.ADVERSARY_POLICY_LEARNING:
+            raise ValueError("adversary_count > 1 is only supported with deterministic adversary policy.")
 
         if adversary_enabled is None:
             self.adversary_enabled = self.scenario == self.SCENARIO_ADVERSARY
@@ -157,9 +169,11 @@ class GridworldEnv:
         self.fixed_forklift_starts = list(forklift_starts) if forklift_starts is not None else None
         self.fixed_adversary_start = adversary_start
 
+        self.shelf_count = max(1, int(shelf_count))
         self.shelf_obstacles = obstacles or set()
         if not self.shelf_obstacles:
-            self.shelf_obstacles = self._place_fixed_shelf()
+            for _ in range(self.shelf_count):
+                self.shelf_obstacles |= self._place_fixed_shelf()
 
         self.spill_count = spill_count
         self.spill_obstacles: set[tuple[int, int]] = set()
@@ -179,6 +193,7 @@ class GridworldEnv:
         self.adversary_learning_progress_reward_scale = adversary_learning_progress_reward_scale
         self.adversary_learning_catch_reward = adversary_learning_catch_reward
         self.adversary_learning_objective = adversary_learning_objective
+        self.adversary_freeze_episode = max(0, int(adversary_freeze_episode))
         self._adversary_learning_epsilon = adversary_learning_epsilon_start
 
         # Reward/cost model for tuning.
@@ -192,18 +207,22 @@ class GridworldEnv:
         self.distance_shaping_enabled = distance_shaping_enabled
         self.distance_shaping_scale = distance_shaping_scale
         self.include_relative_package_destination = include_relative_package_destination
+        self.adversary_proximity_radius = max(0, int(adversary_proximity_radius))
+        self.include_coarse_destination_direction = include_coarse_destination_direction
 
-        self.adversary_pos: tuple[int, int] | None = None
+        self._adversary_positions: list[tuple[int, int]] = []
         self.max_steps = max_steps
         self.n_actions = self.ACTION_COUNT
 
         pos_base = size * size
         dynamic_slots = self._dynamic_slot_count()
+        dynamic_slot_size = 5 if self.adversary_proximity_radius > 0 else pos_base
         self.n_states = (
             (pos_base**self.agent_count)
-            * (pos_base**dynamic_slots)
+            * (dynamic_slot_size**dynamic_slots)
             * (self.PACKAGE_STATE_BASE**self.num_packages)
             * ((2 * self.size - 1) ** (4 * self.num_packages) if self.include_relative_package_destination else 1)
+            * ((9 ** (2 * self.num_packages)) if self.include_coarse_destination_direction else 1)
         )
 
         self._steps = 0
@@ -218,6 +237,20 @@ class GridworldEnv:
         if not self.package_locations or not self.destinations:
             self._generate_packages_and_destinations()
 
+    @property
+    def adversary_pos(self) -> tuple[int, int] | None:
+        """Backward-compatible single adversary position (first adversary, or None)."""
+        return self._adversary_positions[0] if self._adversary_positions else None
+
+    @adversary_pos.setter
+    def adversary_pos(self, value: tuple[int, int] | None) -> None:
+        if value is None:
+            self._adversary_positions = []
+        elif self._adversary_positions:
+            self._adversary_positions[0] = value
+        else:
+            self._adversary_positions = [value]
+
     def reset(self) -> tuple[tuple[int, int], ...]:
         """Start a new episode and return the initial state."""
         self._episode_count += 1
@@ -230,16 +263,20 @@ class GridworldEnv:
         self.spill_obstacles = self._sample_spills()
 
         if self.adversary_enabled:
-            self.adversary_pos = self._spawn_adversary()
+            self._adversary_positions = self._spawn_adversaries()
         else:
-            self.adversary_pos = None
+            self._adversary_positions = []
 
         if self.adversary_policy == self.ADVERSARY_POLICY_LEARNING:
-            progress = min(1.0, self._episode_count / self.adversary_learning_epsilon_decay_episodes)
-            self._adversary_learning_epsilon = (
-                self.adversary_learning_epsilon_start
-                + progress * (self.adversary_learning_epsilon_end - self.adversary_learning_epsilon_start)
-            )
+            frozen = self.adversary_freeze_episode > 0 and self._episode_count > self.adversary_freeze_episode
+            if frozen:
+                self._adversary_learning_epsilon = self.adversary_learning_epsilon_end
+            else:
+                progress = min(1.0, self._episode_count / self.adversary_learning_epsilon_decay_episodes)
+                self._adversary_learning_epsilon = (
+                    self.adversary_learning_epsilon_start
+                    + progress * (self.adversary_learning_epsilon_end - self.adversary_learning_epsilon_start)
+                )
 
         if self.scenario == self.SCENARIO_NATURE:
             self.forklift_positions = self._spawn_forklifts()
@@ -259,9 +296,15 @@ class GridworldEnv:
             total_idx += (row * self.size + col) * multiplier
             multiplier *= pos_base
 
-        for row, col in self._dynamic_positions_for_encoding():
-            total_idx += (row * self.size + col) * multiplier
-            multiplier *= pos_base
+        if self.adversary_proximity_radius > 0:
+            agent_pos = state[0]
+            for prox_code in self._dynamic_proximity_codes(agent_pos):
+                total_idx += prox_code * multiplier
+                multiplier *= 5
+        else:
+            for row, col in self._dynamic_positions_for_encoding():
+                total_idx += (row * self.size + col) * multiplier
+                multiplier *= pos_base
 
         package_code = 0
         for idx, value in enumerate(self._package_state):
@@ -272,6 +315,11 @@ class GridworldEnv:
         if self.include_relative_package_destination:
             relative_code = self._encode_relative_package_destination(state)
             total_idx += relative_code * multiplier
+            multiplier *= (2 * self.size - 1) ** (4 * self.num_packages)
+
+        if self.include_coarse_destination_direction:
+            coarse_code = self._encode_coarse_destination_directions(state)
+            total_idx += coarse_code * multiplier
 
         return total_idx
 
@@ -322,7 +370,7 @@ class GridworldEnv:
                 self._agent_positions = next_positions
                 self._terminal_status = "caught"
                 return StepResult(tuple(self._agent_positions), reward, True, {"caught": "forklift"})
-        elif self.adversary_enabled and self.adversary_pos is not None:
+        elif self.adversary_enabled and self._adversary_positions:
             # Adversary can move at most once per environment step, with an episode-level move budget.
             can_move_this_episode = self._adversary_moves_used < self.adversary_max_moves
             should_move_now = random.random() <= self.adversary_move_prob
@@ -336,7 +384,7 @@ class GridworldEnv:
                 self._move_adversary(next_positions)
             if allow_adversary_move:
                 self._adversary_moves_used += 1
-            if any(pos == self.adversary_pos for pos in next_positions):
+            if any(pos in set(self._adversary_positions) for pos in next_positions):
                 reward += self.adversary_penalty
                 self._agent_positions = next_positions
                 self._terminal_status = "caught"
@@ -388,14 +436,21 @@ class GridworldEnv:
             col = max(0, col - 1)
         return (row, col)
 
-    def _spawn_adversary(self) -> tuple[int, int]:
-        if self.fixed_adversary_start is not None:
-            return self.fixed_adversary_start
+    def _spawn_adversaries(self) -> list[tuple[int, int]]:
+        positions: list[tuple[int, int]] = []
         occupied = self._reserved_cells()
-        while True:
-            cell = (random.randrange(self.size), random.randrange(self.size))
-            if cell not in occupied:
-                return cell
+        for i in range(self.adversary_count):
+            if i == 0 and self.fixed_adversary_start is not None:
+                positions.append(self.fixed_adversary_start)
+                occupied = occupied | {self.fixed_adversary_start}
+            else:
+                while True:
+                    cell = (random.randrange(self.size), random.randrange(self.size))
+                    if cell not in occupied:
+                        positions.append(cell)
+                        occupied = occupied | {cell}
+                        break
+        return positions
 
     def _move_adversary(self, agent_positions: list[tuple[int, int]]) -> None:
         if self.adversary_policy == self.ADVERSARY_POLICY_LEARNING:
@@ -404,27 +459,25 @@ class GridworldEnv:
         self._move_adversary_deterministic(agent_positions)
 
     def _move_adversary_deterministic(self, agent_positions: list[tuple[int, int]]) -> None:
-        if self.adversary_pos is None:
-            return
+        for i in range(len(self._adversary_positions)):
+            adv_r, adv_c = self._adversary_positions[i]
+            target = min(agent_positions, key=lambda pos: abs(pos[0] - adv_r) + abs(pos[1] - adv_c))
+            tgt_r, tgt_c = target
 
-        adv_r, adv_c = self.adversary_pos
-        target = min(agent_positions, key=lambda pos: abs(pos[0] - adv_r) + abs(pos[1] - adv_c))
-        tgt_r, tgt_c = target
+            candidates = []
+            for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                nr, nc = adv_r + dr, adv_c + dc
+                if 0 <= nr < self.size and 0 <= nc < self.size:
+                    if (nr, nc) not in self._all_obstacles():
+                        candidates.append((nr, nc))
+            if not candidates:
+                continue
 
-        candidates = []
-        for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            nr, nc = adv_r + dr, adv_c + dc
-            if 0 <= nr < self.size and 0 <= nc < self.size:
-                if (nr, nc) not in self._all_obstacles():
-                    candidates.append((nr, nc))
-        if not candidates:
-            return
-
-        distances = [abs(pos[0] - tgt_r) + abs(pos[1] - tgt_c) for pos in candidates]
-        best_distance = min(distances)
-        best_candidates = [pos for pos, dist in zip(candidates, distances) if dist == best_distance]
-        # Always random tie-break among equally good moves.
-        self.adversary_pos = random.choice(best_candidates)
+            distances = [abs(pos[0] - tgt_r) + abs(pos[1] - tgt_c) for pos in candidates]
+            best_distance = min(distances)
+            best_candidates = [pos for pos, dist in zip(candidates, distances) if dist == best_distance]
+            # Always random tie-break among equally good moves.
+            self._adversary_positions[i] = random.choice(best_candidates)
 
     def _move_adversary_learning(
         self,
@@ -470,6 +523,8 @@ class GridworldEnv:
     def _update_adversary_q(self, transition: dict, agent_reward: float, done: bool) -> None:
         """Update adversary Q-table from saved transition and objective."""
         if not transition:
+            return
+        if self.adversary_freeze_episode > 0 and self._episode_count > self.adversary_freeze_episode:
             return
 
         if self.adversary_learning_objective == self.ADVERSARY_OBJECTIVE_ZERO_SUM:
@@ -629,7 +684,7 @@ class GridworldEnv:
                 row = random.randrange(self.size - 1)
                 col = random.randrange(self.size)
                 cells = {(row, col), (row + 1, col)}
-            if cells.isdisjoint(self.starts):
+            if cells.isdisjoint(self.starts) and cells.isdisjoint(self.shelf_obstacles):
                 return cells
 
     def _sample_spills(self) -> set[tuple[int, int]]:
@@ -660,11 +715,84 @@ class GridworldEnv:
 
     def _dynamic_positions_for_encoding(self) -> list[tuple[int, int]]:
         if self.adversary_enabled:
-            return [self.adversary_pos or (0, 0)]
+            if not self._adversary_positions:
+                return [(0, 0)]
+            if len(self._adversary_positions) == 1:
+                return [self._adversary_positions[0]]
+            # Multiple adversaries: encode nearest to agent 0 to keep state space unchanged.
+            agent_pos = self._agent_positions[0] if self._agent_positions else (0, 0)
+            nearest = min(
+                self._adversary_positions,
+                key=lambda p: abs(p[0] - agent_pos[0]) + abs(p[1] - agent_pos[1]),
+            )
+            return [nearest]
         positions = list(self.forklift_positions)
         while len(positions) < self._dynamic_slot_count():
             positions.append((0, 0))
         return positions
+
+    def _proximity_direction_code(
+        self,
+        entity_pos: tuple[int, int] | None,
+        agent_pos: tuple[int, int],
+        radius: int,
+    ) -> int:
+        """Return 5-bucket directional proximity code: 0=not-nearby, 1=N, 2=S, 3=E, 4=W."""
+        if entity_pos is None:
+            return 0
+        dr = entity_pos[0] - agent_pos[0]
+        dc = entity_pos[1] - agent_pos[1]
+        if abs(dr) > radius or abs(dc) > radius:
+            return 0
+        if abs(dr) >= abs(dc):
+            return 1 if dr < 0 else 2  # N or S
+        return 3 if dc > 0 else 4      # E or W
+
+    def _dynamic_proximity_codes(self, agent_pos: tuple[int, int]) -> list[int]:
+        """Return one proximity code per dynamic slot (consistent across adversary/nature)."""
+        if self.adversary_enabled:
+            return [self._proximity_direction_code(self.adversary_pos, agent_pos, self.adversary_proximity_radius)]
+        if self.forklift_positions:
+            nearest = min(
+                self.forklift_positions,
+                key=lambda fp: abs(fp[0] - agent_pos[0]) + abs(fp[1] - agent_pos[1]),
+            )
+            return [self._proximity_direction_code(nearest, agent_pos, self.adversary_proximity_radius)]
+        return [0]
+
+    def _octant_direction(self, dr: int, dc: int) -> int:
+        """Encode relative direction as 0–8: 0=same, 1=N, 2=NE, 3=E, 4=SE, 5=S, 6=SW, 7=W, 8=NW."""
+        if dr == 0 and dc == 0:
+            return 0
+        if dr < 0 and dc == 0:
+            return 1
+        if dr < 0 and dc > 0:
+            return 2
+        if dr == 0 and dc > 0:
+            return 3
+        if dr > 0 and dc > 0:
+            return 4
+        if dr > 0 and dc == 0:
+            return 5
+        if dr > 0 and dc < 0:
+            return 6
+        if dr == 0 and dc < 0:
+            return 7
+        return 8  # dr < 0 and dc < 0 → NW
+
+    def _encode_coarse_destination_directions(self, state: tuple[tuple[int, int], ...]) -> int:
+        """Encode octant direction from agent to each package and its destination (9^(2*num_packages) values)."""
+        ref_row, ref_col = state[0]
+        code = 0
+        multiplier = 1
+        for pkg, dst in zip(self.package_locations, self.destinations):
+            pkg_dir = self._octant_direction(pkg[0] - ref_row, pkg[1] - ref_col)
+            dst_dir = self._octant_direction(dst[0] - ref_row, dst[1] - ref_col)
+            code += pkg_dir * multiplier
+            multiplier *= 9
+            code += dst_dir * multiplier
+            multiplier *= 9
+        return code
 
     def _reserved_cells(self) -> set[tuple[int, int]]:
         return set(self.starts) | set(self.shelf_obstacles) | set(self.package_locations) | set(self.destinations)
@@ -686,8 +814,8 @@ class GridworldEnv:
         for dst in self.destinations:
             grid[dst] = self.RENDER_DESTINATION
 
-        if self.adversary_pos is not None:
-            grid[self.adversary_pos] = self.RENDER_ADVERSARY
+        for adv_pos in self._adversary_positions:
+            grid[adv_pos] = self.RENDER_ADVERSARY
         for forklift in self.forklift_positions:
             grid[forklift] = self.RENDER_FORKLIFT
 
