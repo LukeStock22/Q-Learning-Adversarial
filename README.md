@@ -1,10 +1,30 @@
 # Q-Learning-Adversarial
 
-Tabular Q-Learning in a grid-based warehouse environment with stochastic disturbances and strategic adversaries.
+Tabular Q-learning in a grid warehouse with two training regimes:
+- `nature` training: static shelves + stochastic forklifts
+- `adversary` training: static shelves + active adversary
 
-Current focus: a two-agent gridworld with multiple packages, fixed shelves, and per-episode spill obstacles (no adversaries yet).
+The project compares which training regime transfers better under ID-A and OOD-layout evaluation.
+
+## Terminology
+
+- `Policy`: the trained Q-table for the delivery agent.
+- `Nature policy`: agent policy trained in the `nature` scenario.
+- `Adversary policy`: agent policy trained in the `adversary` scenario.
+- `Scenario`: environment disturbance model used during rollout.
+  - `nature`: shelves + forklift hazards
+  - `adversary`: shelves + adversary hazard
+- `Shelf`: static obstacle (2x1 block) fixed for a run.
+- `Forklift`: stochastic hazard; each step it moves to a random valid neighbor with probability `forklift_move_prob`, else stays.
+- `Adversary`:
+  - `deterministic`: greedy pursuit toward the agent (Manhattan distance), random tie-breaks
+  - `learning`: separate tabular learner with configurable objective (`heuristic` or `zero_sum`)
+- `ID-A`: evaluation on the same base layout used for training in that run.
+- `OOD-layout`: evaluation on unseen layouts sampled from the same generation rules (default: 5 layouts).
+- `Cross-scenario evaluation`: each trained policy is evaluated on both scenarios (`nature`, `adversary`).
 
 ## Setup
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -12,73 +32,129 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-## Run
+## Run Experiments
+
+### 1) Run baseline only
+
 ```bash
-PYTHONPATH=src python -m qlearning_adversarial.main
+python scripts/run_experiments.py
 ```
 
-## Configuration
-Edit `configs/default.yaml` to change grid size, training hyperparameters, evaluation episodes, and output paths.
+This runs `configs/default.yaml` and writes results to:
+- `outputs/default/`
 
-## Evaluation Modes
-- ID-A: same exact layout as training (same shelf + package/destination), but spills randomized each episode.
-- OOD: new shelf layout and new package/destination placements; same disturbance parameters.
+### 2) Create a new experiment override
 
-## Outputs
-Running the program writes:
-- `outputs/rewards.csv`: per-episode reward and moving average
-- `outputs/learning_curve.png`: simple training curve plot
-- `outputs/gridworld_layout.png`: static image of the grid layout (starts, packages, destinations, shelf)
-- `outputs/metrics.txt`: ID-A and OOD evaluation averages
+1. Copy template:
+```bash
+cp configs/experiments/EXPERIMENT_TEMPLATE.yaml configs/experiments/my_experiment.yaml
+```
+2. Edit only keys you want to override (everything else comes from `configs/default.yaml`).
 
-## Project Goals
-- Compare stochastic vs adversarial training for robustness in dynamic gridworlds
-- Evaluate generalization to unseen layouts and disruption patterns
+Example minimal override:
+```yaml
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+```
 
-## Repo Status
-Working multi-agent skeleton with training, evaluation, and plotting.
+### 3) Run that experiment
 
-## Customizability
-The following parameters can be edited in `configs/default.yaml`:
-- `project.grid_size`: grid width/height
-- `project.seed`: base RNG seed
-- `project.output_dir`: output directory
-- `run.tier`: `debug` (fast) or `report` (longer)
-- `run.debug.*` / `run.report.*`: train and eval episode counts per tier
-- `training.max_steps`: max steps per episode
-- `training.alpha`, `training.gamma`, `training.epsilon`: Q-learning hyperparameters
-- `training.agent_count`: number of agents (1 or 2)
-- `training.num_packages`: number of packages/destinations
-- `training.shared_q`: shared Q-table toggle for two agents
-- `training.spill_count`: number of randomized spill obstacles per episode
-- `eval.mode`: `id_a`, `ood`, or `both`
-- `eval.max_steps`: max steps per evaluation episode
+```bash
+python scripts/run_experiments.py --only my_experiment
+```
+
+Important:
+- Use experiment name **without** `.yaml`.
+- This writes to `outputs/my_experiment/`.
+
+### 4) Run multiple or manifest-based experiments
+
+```bash
+python scripts/run_experiments.py --only exp_a exp_b
+python scripts/run_experiments.py --use-manifest
+```
+
+## Evaluation and Design Assumptions
+
+- Comparison mode trains **two separate agent policies** per run:
+  - one in `nature`
+  - one in `adversary`
+- Within a run, both policies share the same sampled base layout primitives during training:
+  - shelf placement
+  - agent start
+  - package and destination
+  - matched hazard start anchor
+- ID-A uses that training layout.
+- OOD-layout uses new unseen layouts (`eval.ood_layout_count`, default `5`).
+- OOD reported metrics are aggregated across all OOD layouts and eval episodes.
+- Evaluation uses greedy agent actions with random tie-breaks.
+- Disturbance motion remains stochastic according to scenario settings.
 
 ## Repository Structure
-- `.git/`: Git metadata for version control.
-- `.gitignore`: Ignore rules for local artifacts (envs, caches, outputs).
-- `.venv/`: Local Python virtual environment (not committed).
-- `PROJECT_DESCRIPTION.md`: Project brief, literature context, and timeline.
-- `README.md`: Project overview and setup instructions.
-- `requirements.txt`: Python dependencies for the baseline setup.
-- `configs/`: Configuration files for experiments.
-- `configs/default.yaml`: Default training and environment settings.
-- `data/`: Location for raw or generated datasets.
-- `data/README.md`: Notes on data storage and versioning guidance.
-- `notebooks/`: Exploratory analysis and quick experiments.
-- `notebooks/README.md`: Notes on notebook usage.
-- `outputs/`: Training outputs, plots, and checkpoints.
-- `outputs/.gitkeep`: Keeps the outputs directory tracked in git.
-- `scripts/`: Helper scripts for running workflows.
-- `scripts/run_train.sh`: Shell script to run the entrypoint.
-- `src/`: Python source package root.
-- `src/qlearning_adversarial/`: Core package for the project.
-- `src/qlearning_adversarial/__init__.py`: Package initializer.
-- `src/qlearning_adversarial/main.py`: Entry point for running training/evaluation.
-- `src/qlearning_adversarial/env.py`: Two-agent gridworld with multi-package pickup/delivery, collisions, and fixed shelf.
-- `src/qlearning_adversarial/agent.py`: Single- and multi-agent Q-learning implementations with shared-table option.
-- `src/qlearning_adversarial/train.py`: Training loop and reward smoothing.
-- `src/qlearning_adversarial/eval.py`: Greedy evaluation loop.
-- `src/qlearning_adversarial/utils.py`: Seeding and filesystem helpers.
-- `tests/`: Automated tests.
-- `tests/test_smoke.py`: Basic smoke test placeholder.
+
+- `configs/`
+  - `default.yaml`: baseline config and default assumptions
+  - `experiments/*.yaml`: per-experiment overrides
+- `src/qlearning_adversarial/`
+  - `main.py`: orchestrates train + eval + output writing
+  - `env.py`: gridworld dynamics, rewards, hazards, rendering
+  - `agent.py`: tabular Q-learning agent(s)
+  - `train.py`: training loop and artifact persistence
+  - `eval.py`: evaluation loops and aggregate stats
+  - `utils.py`: misc utilities
+- `scripts/`
+  - `run_experiments.py`: merges config and executes baseline/overrides
+  - `visualize_result.py`: replay utility for saved artifacts
+- `outputs/`
+  - one folder per run (`default`, `la_zs_ic_ds`, etc.)
+- `docs/`
+  - `TUNING_BOARD.md`: parameter catalog for controlled sweeps
+
+## Output Layout (per experiment)
+
+For an experiment named `my_experiment`, outputs are written to `outputs/my_experiment/`:
+
+- `config_used.yaml`: exact merged config used
+- `csv/`
+  - `nature_rewards.csv`, `adversary_rewards.csv`
+  - `strategy_comparison_ida.csv`
+  - `strategy_comparison_ood_layout.csv`
+- `learningcurves/`
+  - `nature_learning_curve.png`
+  - `adversary_learning_curve.png`
+- `png/`
+  - static layout snapshots
+- `gif/`
+  - ID-A and OOD rollout animations for cross-scenario pairs
+- `pkl/`
+  - trained tables and serialized env configs
+- `txt/`
+  - `metrics.txt` summary
+
+## Visualization
+
+Primary visualization is generated automatically in each run:
+- `outputs/<experiment_name>/gif/`
+
+Recommended usage:
+- Open the run-specific GIFs produced by `qlearning_adversarial.main` (ID-A and OOD cross-scenario rollouts).
+
+Optional replay script:
+```bash
+PYTHONPATH=src python scripts/visualize_result.py --prefix nature
+PYTHONPATH=src python scripts/visualize_result.py --prefix adversary
+```
+- This replays from artifacts in the output directory pointed to by `project.output_dir` in `configs/default.yaml`.
+- For experiment-specific artifacts, use the auto-generated GIFs in `outputs/<experiment_name>/gif/` unless you intentionally repoint `project.output_dir`.
+
+## Key Config Areas
+
+- `run.*`: train/eval episode budgets
+- `training.*`: agent learning hyperparameters
+- `scenarios.nature.*`: forklift-driven disturbance behavior
+- `scenarios.adversary.*`: adversary behavior and learning objective
+- `rewards.*`: reward/cost model (step, pickup/delivery, penalties, shaping)
+- `state_features.*`: state representation toggles (for example relative package/destination context)
+- `eval.*`: evaluation controls (including OOD layout count)
+

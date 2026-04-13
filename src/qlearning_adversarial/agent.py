@@ -37,12 +37,18 @@ class QLearningAgent:
         if random.random() < self.epsilon:
             # Explore: choose a random action.
             return random.randrange(self.n_actions)
-        # Exploit: choose the best known action.
-        return int(np.argmax(self.q[state_idx]))
+        # Exploit with random tie-break over best actions.
+        values = self.q[state_idx]
+        best_value = float(np.max(values))
+        best_actions = [idx for idx, value in enumerate(values) if float(value) == best_value]
+        return int(random.choice(best_actions))
 
     def select_greedy_action(self, state_idx: int) -> int:
         """Select the best-known action without exploration (for evaluation)."""
-        return int(np.argmax(self.q[state_idx]))
+        values = self.q[state_idx]
+        best_value = float(np.max(values))
+        best_actions = [idx for idx, value in enumerate(values) if float(value) == best_value]
+        return int(random.choice(best_actions))
 
     def update(self, state_idx: int, action: int, reward: float, next_state_idx: int, done: bool) -> None:
         """Update Q(s,a) using the standard Q-learning rule."""
@@ -98,7 +104,10 @@ class MultiAgentQLearning:
             if random.random() < self.epsilon:
                 joint = random.randrange(self.n_joint_actions)
             else:
-                joint = int(np.argmax(self.q_shared[state_idx]))
+                values = self.q_shared[state_idx]
+                best_value = float(np.max(values))
+                best_joint_actions = [idx for idx, value in enumerate(values) if float(value) == best_value]
+                joint = int(random.choice(best_joint_actions))
             return tuple(self._decode_joint_action(joint))
 
         # Independent action selection when not sharing a Q-table.
@@ -107,24 +116,33 @@ class MultiAgentQLearning:
             if random.random() < self.epsilon:
                 actions.append(random.randrange(self.n_actions))
             else:
-                actions.append(int(np.argmax(self.q_agents[agent_idx][state_idx])))
+                values = self.q_agents[agent_idx][state_idx]
+                best_value = float(np.max(values))
+                best_actions = [idx for idx, value in enumerate(values) if float(value) == best_value]
+                actions.append(int(random.choice(best_actions)))
         return tuple(actions)
 
     def select_greedy_actions(self, state_idx: int) -> tuple[int, ...]:
         """Select the best-known actions without exploration."""
         if self.shared_q:
-            joint = int(np.argmax(self.q_shared[state_idx]))
+            values = self.q_shared[state_idx]
+            best_value = float(np.max(values))
+            best_joint_actions = [idx for idx, value in enumerate(values) if float(value) == best_value]
+            joint = int(random.choice(best_joint_actions))
             return tuple(self._decode_joint_action(joint))
 
         actions = []
         for agent_idx in range(self.agent_count):
-            actions.append(int(np.argmax(self.q_agents[agent_idx][state_idx])))
+            values = self.q_agents[agent_idx][state_idx]
+            best_value = float(np.max(values))
+            best_actions = [idx for idx, value in enumerate(values) if float(value) == best_value]
+            actions.append(int(random.choice(best_actions)))
         return tuple(actions)
 
     def update(
         self,
         state_idx: int,
-        actions: tuple[int, int],
+        actions: tuple[int, ...],
         reward: float,
         next_state_idx: int,
         done: bool,

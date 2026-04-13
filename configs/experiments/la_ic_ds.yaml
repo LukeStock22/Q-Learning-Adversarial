@@ -1,0 +1,10 @@
+state_features:
+  include_relative_package_destination: true
+
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+
+scenarios:
+  adversary:
+    adversary_policy: learning

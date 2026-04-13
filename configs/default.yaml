@@ -1,28 +1,111 @@
 project:
   name: qlearning-adversarial
   grid_size: 5
-  seed: 7
-  output_dir: outputs
+  seed: 77
+  output_dir: outputs/
+
+experiment:
+  mode: comparison  # comparison | single
+
 run:
   tier: debug
   debug:
-    train_episodes: 5000
-    eval_id_episodes: 50
-    eval_ood_episodes: 50
-  report:
     train_episodes: 20000
-    eval_id_episodes: 200
-    eval_ood_episodes: 200
+    eval_episodes: 50
+  report:
+    train_episodes: 40000
+    eval_episodes: 200
+
 training:
   max_steps: 200
   alpha: 0.1
   gamma: 0.95
-  epsilon: 0.1
+  epsilon_start: 0.4
+  epsilon_end: 0.05
   agent_count: 1
   num_packages: 1
+  num_train_layouts: 1
+  shelf_count: 1
   shared_q: true
-  spill_count: 0
   progress_every: 100
+
+  # Used only when experiment.mode=single
+  scenario: nature
+  spill_count: 0
+  forklift_count: 1
+  forklift_move_prob: 0.5
+  adversary_policy: deterministic  # deterministic | learning
+  adversary_move_prob: 0.5
+  adversary_max_moves: 1000
+  adversary_learning_alpha: 0.2
+  adversary_learning_gamma: 0.95
+  adversary_learning_epsilon_start: 0.4
+  adversary_learning_epsilon_end: 0.05
+  adversary_learning_epsilon_decay_episodes: 20000
+  adversary_learning_progress_reward_scale: 1.0
+  adversary_learning_catch_reward: 25.0
+  adversary_learning_objective: heuristic  # heuristic | zero_sum
+  adversary_freeze_episode: 0  # 0 = never freeze; >0 = freeze adversary Q-updates after this episode
+  adversary_random_tiebreak: true
+  adversary_enabled: false
+
+rewards:
+  step_penalty: -2.0
+  obstacle_penalty: -3.0
+  collision_penalty: -5.0
+  forklift_penalty: -50.0
+  adversary_penalty: -50.0
+  pickup_reward: 25.0
+  delivery_reward: 100.0
+  distance_shaping_enabled: false
+  distance_shaping_scale: 0.0
+
+state_features:
+  include_relative_package_destination: false
+  adversary_proximity_radius: 0
+  include_coarse_destination_direction: false
+
+scenarios:
+  nature:
+    scenario: nature
+    spill_count: 0
+    forklift_count: 1
+    forklift_move_prob: 0.5
+    adversary_policy: deterministic
+    adversary_move_prob: 0.5
+    adversary_max_moves: 1000
+    adversary_learning_alpha: 0.2
+    adversary_learning_gamma: 0.95
+    adversary_learning_epsilon_start: 0.4
+    adversary_learning_epsilon_end: 0.05
+    adversary_learning_epsilon_decay_episodes: 20000
+    adversary_learning_progress_reward_scale: 1.0
+    adversary_learning_catch_reward: 25.0
+    adversary_learning_objective: heuristic
+    adversary_freeze_episode: 0
+    adversary_random_tiebreak: true
+    adversary_enabled: false
+  adversary:
+    scenario: adversary
+    spill_count: 0
+    forklift_count: 0
+    forklift_move_prob: 0.5
+    adversary_policy: deterministic
+    adversary_move_prob: 0.5
+    adversary_max_moves: 1000
+    adversary_learning_alpha: 0.2
+    adversary_learning_gamma: 0.95
+    adversary_learning_epsilon_start: 0.4
+    adversary_learning_epsilon_end: 0.05
+    adversary_learning_epsilon_decay_episodes: 20000
+    adversary_learning_progress_reward_scale: 1.0
+    adversary_learning_catch_reward: 25.0
+    adversary_learning_objective: heuristic
+    adversary_freeze_episode: 0
+    adversary_random_tiebreak: true
+    adversary_enabled: true
+    adversary_count: 1
+
 eval:
-  mode: both
   max_steps: 200
+  ood_layout_count: 10

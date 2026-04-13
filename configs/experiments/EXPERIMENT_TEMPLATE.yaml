@@ -1,0 +1,123 @@
+# Experiment Override Template
+# ---------------------------
+# Duplicate this file, rename it (e.g. my_experiment.yaml), and set only the
+# fields you want to override. Any field omitted here falls back to
+# configs/default.yaml.
+
+# {} means "no override" for that section.
+
+project: {}
+# Example:
+# project:
+#   seed: 101
+#   grid_size: 7
+#   output_dir: outputs/
+
+experiment: {}
+# Example:
+# experiment:
+#   mode: comparison  # comparison | single
+
+run: {}
+# Example:
+# run:
+#   tier: debug
+#   debug:
+#     train_episodes: 20000
+#     eval_episodes: 100
+
+training: {}
+# Example:
+# training:
+#   max_steps: 220
+#   alpha: 0.1
+#   gamma: 0.95
+#   epsilon_start: 0.4
+#   epsilon_end: 0.05
+#   agent_count: 1
+#   num_packages: 1
+#   shared_q: true
+#   progress_every: 100
+#
+#   # Used when experiment.mode=single:
+#   scenario: nature
+#   spill_count: 0
+#   forklift_count: 1
+#   forklift_move_prob: 0.5
+#   adversary_policy: deterministic  # deterministic | learning
+#   adversary_move_prob: 0.5
+#   adversary_max_moves: 1000
+#   adversary_learning_alpha: 0.2
+#   adversary_learning_gamma: 0.95
+#   adversary_learning_epsilon_start: 0.4
+#   adversary_learning_epsilon_end: 0.05
+#   adversary_learning_epsilon_decay_episodes: 20000
+#   adversary_learning_progress_reward_scale: 1.0
+#   adversary_learning_catch_reward: 25.0
+#   adversary_learning_objective: heuristic  # heuristic | zero_sum
+#   adversary_random_tiebreak: true
+#   adversary_enabled: false
+
+rewards: {}
+# Example:
+# rewards:
+#   step_penalty: -2.0
+#   obstacle_penalty: -3.0
+#   collision_penalty: -5.0
+#   forklift_penalty: -50.0
+#   adversary_penalty: -50.0
+#   pickup_reward: 25.0
+#   delivery_reward: 100.0
+#   distance_shaping_enabled: false
+#   distance_shaping_scale: 0.0
+
+state_features: {}
+# Example:
+# state_features:
+#   include_relative_package_destination: true
+
+scenarios: {}
+# Example:
+# scenarios:
+#   nature:
+#     scenario: nature
+#     spill_count: 0
+#     forklift_count: 1
+#     forklift_move_prob: 0.5
+#     adversary_policy: deterministic
+#     adversary_move_prob: 0.5
+#     adversary_max_moves: 1000
+#     adversary_learning_alpha: 0.2
+#     adversary_learning_gamma: 0.95
+#     adversary_learning_epsilon_start: 0.4
+#     adversary_learning_epsilon_end: 0.05
+#     adversary_learning_epsilon_decay_episodes: 20000
+#     adversary_learning_progress_reward_scale: 1.0
+#     adversary_learning_catch_reward: 25.0
+#     adversary_learning_objective: heuristic
+#     adversary_random_tiebreak: true
+#     adversary_enabled: false
+#   adversary:
+#     scenario: adversary
+#     spill_count: 0
+#     forklift_count: 0
+#     forklift_move_prob: 0.5
+#     adversary_policy: deterministic
+#     adversary_move_prob: 0.5
+#     adversary_max_moves: 1000
+#     adversary_learning_alpha: 0.2
+#     adversary_learning_gamma: 0.95
+#     adversary_learning_epsilon_start: 0.4
+#     adversary_learning_epsilon_end: 0.05
+#     adversary_learning_epsilon_decay_episodes: 20000
+#     adversary_learning_progress_reward_scale: 1.0
+#     adversary_learning_catch_reward: 25.0
+#     adversary_learning_objective: heuristic
+#     adversary_random_tiebreak: true
+#     adversary_enabled: true
+
+eval: {}
+# Example:
+# eval:
+#   max_steps: 200
+#   ood_layout_count: 5

@@ -1,0 +1,35 @@
+# Learned adversary active (zero-sum) WITHOUT include_relative_package_destination.
+# Matches the deterministic adversary experiments' state space (5x5 = 2500 states)
+# so that OOD evaluation is valid and comparable.
+#
+# Root cause fix: la_zs_active used include_relative_package_destination=true which
+# expanded the state space from 2500 to 16.4M. With 40k training episodes, only
+# ~3500 of 16.4M states were ever visited. 100% of OOD evaluation state lookups
+# returned zero Q-values — making all A->N OOD results pure random walks.
+#
+# This experiment removes that feature (default: false) to restore state coverage.
+# Distance shaping is kept (does not affect state space size).
+
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+
+run:
+  debug:
+    train_episodes: 40000
+
+scenarios:
+  adversary:
+    adversary_policy: learning
+    adversary_learning_objective: zero_sum
+    adversary_move_prob: 1.0
+    adversary_learning_epsilon_start: 0.8
+    adversary_learning_epsilon_end: 0.05
+    adversary_learning_epsilon_decay_episodes: 20000
+    adversary_learning_alpha: 0.3
+
+eval:
+  ood_layout_count: 10
+
+experiment: {}
+training: {}

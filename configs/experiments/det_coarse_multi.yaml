@@ -1,0 +1,24 @@
+# Option C+D: Coarse destination direction + Multi-layout training — Deterministic adversary.
+# Hypothesis: direction features (Option C) give clearer navigational signal that
+# helps the agent efficiently learn across 10 training layouts (Option D),
+# potentially recovering ID performance degradation while maintaining OOD gains.
+# State space: 202,500 with 10 training layouts.
+
+run:
+  debug:
+    train_episodes: 40000
+
+state_features:
+  include_coarse_destination_direction: true
+
+training:
+  num_train_layouts: 10
+
+eval:
+  ood_layout_count: 10
+
+experiment: {}
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+scenarios: {}
