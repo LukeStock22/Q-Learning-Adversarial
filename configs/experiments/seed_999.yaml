@@ -1,0 +1,12 @@
+project:
+  seed: 999
+
+experiment: {}
+run: {}
+training: {}
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+state_features: {}
+scenarios: {}
+eval: {}

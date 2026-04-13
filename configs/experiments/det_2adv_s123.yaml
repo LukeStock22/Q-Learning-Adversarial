@@ -1,0 +1,20 @@
+project:
+  seed: 123
+
+run:
+  debug:
+    train_episodes: 40000
+
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+
+eval:
+  ood_layout_count: 10
+
+training:
+  num_train_layouts: 10
+experiment: {}
+scenarios:
+  adversary:
+    adversary_count: 2

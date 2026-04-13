@@ -1,0 +1,25 @@
+# Exp 26: 2 cooperative agents + 200k training episodes (deterministic adversary).
+# Follow-up to Exp 21 (1.03x at 40k eps, 62,500-state joint Q-table).
+# At 40k eps, coverage is ~128 visits/state (25x thinner than baseline).
+# 200k eps gives ~640 visits/state -- still below baseline 3200 but much more comparable.
+# Key question: does the null OOD result persist with adequate coverage,
+# or was it a thin-coverage artifact?
+
+project: {}
+
+run:
+  debug:
+    train_episodes: 200000
+
+training:
+  agent_count: 2
+
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+
+eval:
+  ood_layout_count: 10
+
+experiment: {}
+scenarios: {}

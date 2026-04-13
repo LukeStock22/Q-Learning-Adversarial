@@ -1,0 +1,20 @@
+project:
+  seed: 456
+  grid_size: 7
+
+run:
+  tier: debug
+  debug:
+    train_episodes: 40000
+    eval_episodes: 50
+
+eval:
+  ood_layout_count: 15
+
+experiment: {}
+training: {}
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+state_features: {}
+scenarios: {}

@@ -1,0 +1,27 @@
+# Exp 25: 7x7 + 2 shelves + multi-layout training (deterministic adversary).
+# Follow-up to Exp 24 (0.77x reversal on single-layout 7x7+2shelves).
+# Applies Option D best practice: 10 training layouts to improve coverage density.
+# State space: 49 x 49 x 4 = 9,604. Coverage ~833/state (same as single-layout 7x7).
+# Key question: does the 0.77x reversal persist with multi-layout training,
+# or was it an artifact of single-layout insufficient OOD generalization?
+
+project:
+  grid_size: 7
+
+run:
+  debug:
+    train_episodes: 40000
+
+training:
+  shelf_count: 2
+  num_train_layouts: 10
+
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+
+eval:
+  ood_layout_count: 10
+
+experiment: {}
+scenarios: {}

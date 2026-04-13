@@ -1,0 +1,23 @@
+# Exp 21: 2 cooperative delivery agents + deterministic adversary, 5x5, multi-layout.
+# Tests whether adversary training OOD benefit extends to cooperative multi-agent.
+# State space: 25^2 x 25 x 4 = 62,500. Multi-layout (10 layouts) applied.
+
+project: {}
+
+run:
+  debug:
+    train_episodes: 40000
+
+training:
+  agent_count: 2
+  num_train_layouts: 10
+
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+
+eval:
+  ood_layout_count: 10
+
+experiment: {}
+scenarios: {}

@@ -24,6 +24,8 @@ training:
   epsilon_end: 0.05
   agent_count: 1
   num_packages: 1
+  num_train_layouts: 1
+  shelf_count: 1
   shared_q: true
   progress_every: 100
 
@@ -43,6 +45,7 @@ training:
   adversary_learning_progress_reward_scale: 1.0
   adversary_learning_catch_reward: 25.0
   adversary_learning_objective: heuristic  # heuristic | zero_sum
+  adversary_freeze_episode: 0  # 0 = never freeze; >0 = freeze adversary Q-updates after this episode
   adversary_random_tiebreak: true
   adversary_enabled: false
 
@@ -59,6 +62,8 @@ rewards:
 
 state_features:
   include_relative_package_destination: false
+  adversary_proximity_radius: 0
+  include_coarse_destination_direction: false
 
 scenarios:
   nature:
@@ -77,6 +82,7 @@ scenarios:
     adversary_learning_progress_reward_scale: 1.0
     adversary_learning_catch_reward: 25.0
     adversary_learning_objective: heuristic
+    adversary_freeze_episode: 0
     adversary_random_tiebreak: true
     adversary_enabled: false
   adversary:
@@ -95,8 +101,10 @@ scenarios:
     adversary_learning_progress_reward_scale: 1.0
     adversary_learning_catch_reward: 25.0
     adversary_learning_objective: heuristic
+    adversary_freeze_episode: 0
     adversary_random_tiebreak: true
     adversary_enabled: true
+    adversary_count: 1
 
 eval:
   max_steps: 200

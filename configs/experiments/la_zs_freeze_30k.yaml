@@ -1,0 +1,35 @@
+# Adversary freeze experiment: zero-sum active adversary frozen at episode 30k.
+# Identical to la_zs_active except adversary_freeze_episode=30000.
+# After episode 30k the adversary Q-table stops updating and epsilon is clamped
+# to epsilon_end (0.05), so the adversary acts near-greedily from a fixed policy.
+# The delivery agent trains for the final 10k episodes against a stable, predictable
+# pursuer — testing whether the predictability of a frozen learned adversary
+# produces the same OOD transfer advantage seen with the deterministic adversary.
+
+state_features:
+  include_relative_package_destination: true
+
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+
+run:
+  debug:
+    train_episodes: 40000
+
+scenarios:
+  adversary:
+    adversary_policy: learning
+    adversary_learning_objective: zero_sum
+    adversary_move_prob: 1.0
+    adversary_learning_epsilon_start: 0.8
+    adversary_learning_epsilon_end: 0.05
+    adversary_learning_epsilon_decay_episodes: 20000
+    adversary_learning_alpha: 0.3
+    adversary_freeze_episode: 30000
+
+eval:
+  ood_layout_count: 10
+
+experiment: {}
+training: {}

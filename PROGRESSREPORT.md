@@ -24,7 +24,7 @@
 
 %%% Load required packages here (note that many are included already).
 
-\usepackage{balance} % for balancing columns on the final page]
+\usepackage{balance} % for balancing columns on the final page
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric}
 \usepackage{float}
@@ -54,7 +54,7 @@ on Autonomous Agents and Multiagent Systems (AAMAS 2026)}{May 25 -- 29, 2026}
 
 %%% Use this command to specify the title of your paper.
 
-\title[AAMAS-2026 Formatting Instructions]{Adversarial Q-Learning in Warehouse Environments}
+\title{Adversarial Q-Learning in Warehouse Environments}
 
 %%% Provide names, affiliations, and email addresses for all authors.
 
@@ -218,7 +218,7 @@ The primary execution path is:
     \item collect outputs from \path{outputs/<experiment_name>/}.
 \end{itemize}
 
-In comparison mode, one command trains two separate delivery policies (nature-trained and adversary-trained), then evaluates both policies on both scenarios for ID-A and OOD-layout. OOD-layout metrics are aggregated over \path{eval.ood_layout_count} sampled layouts (default currently set to 10 in baseline runs).
+In comparison mode, one command trains two separate delivery policies (nature-trained and adversary-trained), then evaluates both policies on both scenarios for ID-A and OOD-layout. OOD-layout metrics are aggregated over \path{eval.ood_layout_count} sampled layouts (default currently set to 5 in baseline runs).
 
 \subsection{Configurable Knobs in Current Pipeline}
 The current infrastructure exposes the following tunable groups:
@@ -310,7 +310,7 @@ For learned-adversary experiments with context + shaping:
     \texttt{ood\_\allowbreak layout\_\allowbreak adversary\_\allowbreak on\_\allowbreak adversary = -103.32}.
 \end{itemize}
 
-In the zero-sum run, low ID-A collisions (\texttt{3/50}) and high deliveries (\texttt{47/50}) coexisted with lower return because average episode length was much larger (\texttt{24.82} steps), highlighting that efficiency penalties dominate reward when trajectories are long. Once again, though with our current configuration this decreases performance, it seems to produce much more reasonable adversary behavior. We believe that it is possible that through additional experimentation and tinkering of configuration, having a more difficult (but constrained) adversary could benefit the robustness of the learned policy.
+In the zero-sum run, low ID-A collisions (\texttt{3/50}) and high deliveries (\texttt{47/50}) coexisted with lower return because average episode length was much larger (\texttt{24.82} steps), highlighting that efficiency penalties dominate reward when trajectories are long. Once again, though with our current configuration this decreases performance, it seems to produce much more reasonable adversary behavior. We believe that it is possible that through additional experimentation and tinkering with configuration, having a more difficult (but constrained) adversary could benefit the robustness of the learned policy.
 
 \subsection{Lessons and Current Failure Modes}
 \begin{itemize}

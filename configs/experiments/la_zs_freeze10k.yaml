@@ -1,0 +1,31 @@
+# Exp 18: Learned adversary (zero-sum) with early freeze at episode 10k.
+# Base: la_zs_no_rdest (2500 states, valid OOD evaluation).
+# Adversary learns for first 10k episodes (epsilon decays 0.8→~0.425),
+# then freezes: Q-updates stop and epsilon drops to 0.05 (near-greedy).
+# Delivery agent trains against the frozen learned policy for remaining 30k episodes.
+# Tests whether eliminating co-learning non-stationarity recovers OOD benefit.
+
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+
+run:
+  debug:
+    train_episodes: 40000
+
+scenarios:
+  adversary:
+    adversary_policy: learning
+    adversary_learning_objective: zero_sum
+    adversary_move_prob: 1.0
+    adversary_learning_epsilon_start: 0.8
+    adversary_learning_epsilon_end: 0.05
+    adversary_learning_epsilon_decay_episodes: 20000
+    adversary_learning_alpha: 0.3
+    adversary_freeze_episode: 10000
+
+eval:
+  ood_layout_count: 10
+
+experiment: {}
+training: {}

@@ -1,0 +1,31 @@
+# Option D: Multi-layout training — Learned adversary (zero-sum).
+# Combines la_zs_no_rdest base with 10 training layouts.
+# Each episode selects one of 10 training envs at random; each env has its own
+# adversary Q-table (trained on ~4k episodes each vs 40k single-layout).
+# Tests whether layout diversity + learned adversary together improve OOD robustness.
+
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+
+run:
+  debug:
+    train_episodes: 40000
+
+training:
+  num_train_layouts: 10
+
+scenarios:
+  adversary:
+    adversary_policy: learning
+    adversary_learning_objective: zero_sum
+    adversary_move_prob: 1.0
+    adversary_learning_epsilon_start: 0.8
+    adversary_learning_epsilon_end: 0.05
+    adversary_learning_epsilon_decay_episodes: 20000
+    adversary_learning_alpha: 0.3
+
+eval:
+  ood_layout_count: 10
+
+experiment: {}
