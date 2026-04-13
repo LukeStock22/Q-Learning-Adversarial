@@ -1,0 +1,33 @@
+# Zero-sum learned adversary with fast learning rate (alpha=0.5).
+# Same as la_zs_active but adversary_learning_alpha: 0.3 → 0.5.
+# Hypothesis: faster adversary Q-updates let it converge to a strong pursuit policy
+# earlier in training, giving the delivery agent more time against a capable adversary.
+# If the adversary "wins" the learning race against the agent, co-learning stabilizes
+# because the adversary is consistently ahead.
+
+state_features:
+  include_relative_package_destination: true
+
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+
+run:
+  debug:
+    train_episodes: 40000
+
+scenarios:
+  adversary:
+    adversary_policy: learning
+    adversary_learning_objective: zero_sum
+    adversary_move_prob: 1.0
+    adversary_learning_epsilon_start: 0.8
+    adversary_learning_epsilon_end: 0.05
+    adversary_learning_epsilon_decay_episodes: 20000
+    adversary_learning_alpha: 0.5
+
+eval:
+  ood_layout_count: 10
+
+experiment: {}
+training: {}

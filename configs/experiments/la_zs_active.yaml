@@ -1,0 +1,47 @@
+# Learned adversary, zero-sum, always active.
+#
+# Motivation: la_zs_ic_ds showed the best adversary behavior (zero-sum objective,
+# 47/50 ID-A deliveries) but the adversary was still passive because:
+#   - adversary_move_prob=0.5 (default) means it only acts 50% of steps
+#   - epsilon_start=0.4 gives insufficient early exploration
+#   - alpha=0.2 is slow relative to a co-learning delivery agent
+#
+# Changes from la_zs_ic_ds:
+#   adversary_move_prob:  0.5 → 1.0   (acts every step)
+#   epsilon_start:        0.4 → 0.8   (aggressive early exploration)
+#   epsilon_decay:        20k → 20k   (same window, but over 40k total)
+#   alpha:                0.2 → 0.3   (faster adversary updates)
+#   train_episodes:       20k → 40k   (more budget for co-learning to stabilize)
+#
+# Keeps: zero-sum objective, context features, distance shaping (proven best combo)
+
+state_features:
+  include_relative_package_destination: true
+
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+
+run:
+  debug:
+    train_episodes: 40000
+
+training:
+  epsilon_start: 0.4
+  epsilon_end: 0.05
+
+scenarios:
+  adversary:
+    adversary_policy: learning
+    adversary_move_prob: 1.0
+    adversary_learning_objective: zero_sum
+    adversary_learning_epsilon_start: 0.8
+    adversary_learning_epsilon_end: 0.05
+    adversary_learning_epsilon_decay_episodes: 20000
+    adversary_learning_alpha: 0.3
+
+eval:
+  ood_layout_count: 10
+
+experiment: {}
+rewards: {}

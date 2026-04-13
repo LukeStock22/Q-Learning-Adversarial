@@ -1,0 +1,36 @@
+# Learned adversary (zero-sum, active) on 7x7 grid.
+# Same adversary params as la_zs_active but grid_size=7.
+# Hypothesis: larger grid produces longer episodes, more adversary state transitions,
+# and more layout diversity — adversary may learn more generalizable pursuit behavior.
+# The 7x7 deterministic adversary showed 3.22x OOD delivery ratio; test if
+# a learned adversary on the same grid can approach that.
+
+project:
+  grid_size: 7
+
+state_features:
+  include_relative_package_destination: true
+
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+
+run:
+  debug:
+    train_episodes: 40000
+
+scenarios:
+  adversary:
+    adversary_policy: learning
+    adversary_learning_objective: zero_sum
+    adversary_move_prob: 1.0
+    adversary_learning_epsilon_start: 0.8
+    adversary_learning_epsilon_end: 0.05
+    adversary_learning_epsilon_decay_episodes: 20000
+    adversary_learning_alpha: 0.3
+
+eval:
+  ood_layout_count: 15
+
+experiment: {}
+training: {}

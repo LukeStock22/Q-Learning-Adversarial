@@ -1,0 +1,23 @@
+# Exp 20: 2 packages + deterministic adversary, 5x5, multi-layout training.
+# Tests whether adversary training OOD benefit extends to a 2-step task.
+# State space: 25 x 25 x 16 = 10,000. Multi-layout (10 layouts) applied.
+
+project: {}
+
+run:
+  debug:
+    train_episodes: 40000
+
+training:
+  num_packages: 2
+  num_train_layouts: 10
+
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+
+eval:
+  ood_layout_count: 10
+
+experiment: {}
+scenarios: {}

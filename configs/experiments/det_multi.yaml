@@ -1,0 +1,20 @@
+# Option D: Multi-layout training — Deterministic adversary.
+# Trains on 10 randomly sampled layouts (seeds: base+10000..base+10009).
+# Each episode randomly selects one of the 10 training envs.
+# Goal: improve OOD robustness by exposing agent to layout diversity during training.
+
+run:
+  debug:
+    train_episodes: 40000
+
+training:
+  num_train_layouts: 10
+
+eval:
+  ood_layout_count: 10
+
+experiment: {}
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+scenarios: {}
