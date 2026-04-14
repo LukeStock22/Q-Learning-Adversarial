@@ -78,7 +78,21 @@ on Autonomous Agents and Multiagent Systems (AAMAS 2026)}{May 25 -- 29, 2026}
 We study tabular Q-learning in a gridworld warehouse environment and ask whether training against an active adversary produces delivery policies that generalize better to out-of-distribution (OOD) layouts than policies trained only against stochastic obstacles. We frame the problem as a controlled comparison between a \emph{nature} regime (stochastic forklift hazards) and an \emph{adversary} regime (a deterministic or learned pursuer), evaluating both on a cross-scenario matrix under in-distribution and OOD layout conditions.
 
 Our findings have four parts. First, training against a \emph{deterministic}
-pursuer produces a robust and consistent OOD delivery advantage: $1.89\times$--$3.01\times$ more packages delivered across 16 seeds and two grid sizes, with no reversals. Second, a \emph{learned} (strategic, co-evolving) adversary (measured under controlled conditions) produces \emph{no} OOD benefit. Where the deterministic pursuer yields $1.93\times$, the learned adversary yields $0.93\times$. Adversary \emph{predictability}, not adversary \emph{difficulty}, drives OOD transfer. Third, the key mechanism is \emph{state space coverage}: training on multiple layouts achieves a $\sim$2.3$\times$ OOD improvement regardless of adversary type, while any state-space expansion beyond training coverage hurts OOD performance. Fourth, the deterministic adversary benefit is \emph{context-dependent} but robust. It persists across most boundary conditions: added packages ($1.81\times$), added shelves ($1.07\times$ on $5\times5$, $1.26\times$ on $7\times7$), and added adversaries ($1.06\times$). The only reversal occurs when cooperative multi-agent state space expansion causes training coverage collapse ($0.89\times$, 2 cooperative agents, 62{,}500 states). Together, these results identify both the mechanism and the conditions under which adversarial training improves robustness in warehouse navigation.
+pursuer when only 1 training layout is available produces a robust and consistent OOD delivery advantage: $1.89\times$--$3.01\times$ 
+more packages delivered across 16 seeds and two grid sizes, with no reversals. Second, a 
+\emph{learned} (strategic, co-evolving) adversary, once measured under valid state-space 
+conditions, produces \emph{no} OOD benefit. Where the deterministic pursuer yields $1.93\times$,
+ the learned adversary yields $0.95\times$ in the first valid single-layout comparison. 
+ These results suggest that stable, predictable training pressure is more useful for OOD transfer than a harder co-evolving opponent. 
+ Third, the key mechanism is \emph{state space coverage}: multi-layout training more than 
+ doubles OOD delivery for both adversary types, while state-space expansion beyond training coverage 
+ hurts OOD performance. Fourth, the deterministic adversary effect has \emph{context-dependent}
+  boundary conditions under the multi-layout regime. Starting from a below-parity deterministic 
+  baseline ($0.92\times$), some harder settings move the ratio above 1 
+  (added packages: $1.81\times$; 7$\times$7 + 2 shelves: $1.26\times$), while others produce 
+  only weak gains ($1.07\times$, $1.06\times$) or remain below parity 
+  (2 agents: $0.89\times$, 62{,}500 states). Together, these results identify both the mechanism 
+  and the conditions under which adversarial training improves robustness in warehouse navigation.
 \end{abstract}
 
 
@@ -111,23 +125,29 @@ pursuer produces a robust and consistent OOD delivery advantage: $1.89\times$--$
 
 \section{Introduction}
 
-Warehouse automation environments are highly dynamic and even chaotic in practice. Increasingly popular delivery robots must reach a package, pick it up, and deliver it while operating around traffic and disruptions (e.g., moving forklifts, shelving, blocked aisles). The central problem in this papaer is not only whether an RL policy can solve one fixed environment, but whether a policy trained under one disturbance regime transfers robustly to unseen layouts and disturbance realizations.
+Warehouse automation environments are highly dynamic and even chaotic in practice. Increasingly popular delivery robots must reach a package, pick it up, and deliver it while operating around traffic and disruptions (e.g., moving forklifts, shelving, blocked aisles). The central problem in this paper is not only whether an RL policy can solve one fixed environment, but whether a policy trained under one disturbance regime transfers robustly to unseen layouts and disturbance realizations.
 
 Motivated by robust/adversarial RL and dynamic-warehouse navigation literature \cite{pinto2017rarl,tessler2019actionrobust,kristiansson2025warehouse}, we frame our work as a controlled comparison between two training strategies in the same gridworld task: (i) training against stochastic disturbances (``nature''), and (ii) training against an active adversary (``adversary''). We evaluate both trained policies under identical protocols with in-distribution evaluation (ID-A: same base layout as training) and out-of-distribution evaluation (OOD-layout: unseen layouts).
 
 Our contributions are:
 \begin{enumerate}
   \item A multi-seed demonstration that \emph{deterministic}
-        adversary training produces consistent OOD delivery advantages
+        adversary training, when only 1 training layout is available, produces
+        consistent OOD delivery advantages
         ($1.89\times$--$3.01\times$) with no reversals across 16 seeds on 5$\times$5 and 7$\times$7 grids.
   \item A finding that reveals how state space explosion ($1{,}875
         \to 12.3\text{M}$ states) causes tabular Q-learning OOD evaluations to silently turn into random-walks, and a corrected measurement showing the
-        learned adversary produces a legitimate \textbf{null result} ($0.93\times$).
-  \item A systematic study of state representation and training diversity             showing that multi-layout training doubles OOD delivery independently         of adversary type, and that state space size is the bottleneck for OOD         robustness in tabular Q-learning.
- \item Boundary condition experiments showing the deterministic adversary advantage
-        is robust across most complexity variations: added packages ($1.81\times$),
-        added shelves ($1.07\times$ on $5\times5$, $1.26\times$ on $7\times7$),
-        added adversaries ($1.06\times$). The only reversal occurs when
+        learned adversary, under valid state-space conditions, produces a legitimate
+        \textbf{null result} ($0.95\times$).
+  \item A systematic study of state representation and training diversity showing
+        that multi-layout training more than doubles OOD delivery for both adversary
+        types, and that state space size is the bottleneck for OOD robustness in
+        tabular Q-learning.
+ \item Boundary condition experiments showing that under the multi-layout regime,
+        deterministic-adversary training can re-emerge as beneficial in some harder
+        settings (added packages: $1.81\times$; 7$\times$7 + 2 shelves: $1.26\times$),
+        produces only weak positive shifts in some others (added shelves on $5\times5$:
+        $1.07\times$; added adversary: $1.06\times$), and remains below parity when
         cooperative multi-agent state space expansion (62{,}500 states) exceeds
         training coverage capacity ($0.89\times$).
 \end{enumerate}
