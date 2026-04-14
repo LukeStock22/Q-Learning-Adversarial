@@ -398,7 +398,7 @@ $\times$ 50 eval episodes $= 500$ OOD episodes per cell, across 6 random seeds.
 \label{tab:seed-sweep}
 \centering
 \footnotesize
-\begin{tabular}{lrrrr}
+\begin{tabular}{lrrr}
 \toprule
 \textbf{Seed} & \textbf{N$\to$N Del} & \textbf{A$\to$N Del} & \textbf{Ratio} & \textbf{A$\to$N Coll} \\
 \midrule
@@ -439,8 +439,8 @@ OOD setting (882 vs.\ 467, mean across 5 seeds). OOD collisions drop 15\% (2,048
 to 1,739 per 3,000 eps). The effect holds across all 5 seeds with no reversals.
 
 The reward confound is visible here: in the OOD adversary scenario, the
-nature-trained policy shows slightly better average reward ($-75.4$) than the
-adversary-trained policy ($-81.0$) despite delivering far fewer packages (103 vs.\
+nature-trained policy shows slightly better average reward ($-79.1$) than the
+adversary-trained policy ($-84.6$) despite delivering far fewer packages (103 vs.\
 191). This is because the nature-trained agent is captured quickly, ending episodes
 early and accumulating fewer step penalties. This reaffirms that delivery count and not reward/score is the correct metric.
 
@@ -457,7 +457,7 @@ early and accumulating fewer step penalties. This reaffirms that delivery count 
 \label{tab:7x7}
 \centering
 \footnotesize
-\begin{tabular}{lrrrr}
+\begin{tabular}{lrrr}
 \toprule
 \textbf{Seed} & \textbf{N$\to$N Del} & \textbf{A$\to$N Del} & \textbf{Ratio} & \textbf{N$\to$N Coll} \\
 \midrule
@@ -474,14 +474,13 @@ early and accumulating fewer step penalties. This reaffirms that delivery count 
 
 \textbf{Findings.} The 7$\times$7 grid produces our strongest result:
 $\mathbf{3.01\times}$ OOD delivery advantage, no reversals across 5 seeds.
-Collisions drop 32\% (450 to 304 per 750 eps) — the largest collision reduction
-across all experiments. The advantage scales with grid size, consistent with the
+Collisions drop 32\% (450 to 304 per 750 eps). The advantage scales with grid size, consistent with the
 hypothesis that a pursuer forces the agent to explore a wider range of states as
 the environment grows more complex.
 
 \textbf{Tradeoff.} On ID-A nature evaluation (same training layout, no
-pursuer at test time), the adversary-trained policy achieves 48.6/50 deliveries but
-with substantially lower average reward (45.4 vs.\ 97.7 for nature-trained). The
+pursuer at test time), the adversary-trained policy achieves 47.2/50 deliveries but
+with substantially lower average reward (62.1 vs.\ 107.3 for nature-trained). The
 adversary-trained agent learned evasive long-path behavior against the pursuer; this
 over-caution persists when the pursuer is absent. The delivery count is nearly the
 same, but the agent takes far more steps to accomplish it. This tradeoff is worth noting and
@@ -556,8 +555,8 @@ The 1.07$\times$ ``null result'' from Experiments 4--8 was not a real measuremen
 \textbf{Lessons for tabular RL evaluation.} This failure mode is easy to miss since
 ID-A results remain valid (training-layout states ARE populated regardless of state
 space size), so the policy appears well-trained. Only OOD evaluation, where novel
-state combinations appear, exposes the coverage gap. We now verify Q-table coverage rates
-on OOD state lookups as part of every reported result.
+state combinations appear, exposes the coverage gap. We therefore checked OOD
+Q-table coverage before treating later learned-adversary OOD results as valid.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Experiment 9: First Valid Learned Adversary Measurement}
@@ -569,17 +568,19 @@ removed, restoring the 1,875-state space (matching Experiments 1--3). All other
 learned adversary settings were retained: zero-sum objective, adversary acts every
 step, 40k episodes, 5 seeds.
 
-\textbf{State coverage verified.} Post-run diagnostics confirmed 3,355/7,500
-Q-table entries nonzero (44.7\%), with a \textbf{63\% nonzero hit rate} on OOD
-state lookups — comparable to Experiments 1--3 (38--51\%). The evaluation reflects
-genuine policy behavior.
+\textbf{State coverage verified.} Post-run diagnostics confirmed 3,355 nonzero learned-adversary Q-values distributed across
+924 states with at least one nonzero action value. In the OOD A$\to$N evaluation,
+28,775 of 45,649 state lookups (63.0\%) hit states with at least one nonzero
+Q-value. This no longer exhibits the all-zero failure mode seen in
+Experiments~4--8, so the evaluation reflects genuine policy behavior rather than
+a seeded random walk.
 
 \begin{table}[H]
 \caption{Exp~9 OOD nature delivery results (500 eps per seed).}
 \label{tab:exp9}
 \centering
 \footnotesize
-\begin{tabular}{lrrrr}
+\begin{tabular}{lrrr}
 \toprule
 \textbf{Seed} & \textbf{N$\to$N Del} & \textbf{A$\to$N Del} & \textbf{Ratio} \\
 \midrule
@@ -587,34 +588,38 @@ genuine policy behavior.
 42  & 91  & 88  & 0.97$\times$ \\
 123 & 88  & 62  & 0.70$\times$ \\
 456 & 122 & 114 & 0.93$\times$ \\
-789 & 63  & 61  & 0.97$\times$ \\
+789 & 66  & 72  & 1.09$\times$ \\
 \midrule
-\textbf{Mean} & \textbf{95.8 $\pm$ 23.5} & \textbf{89.6 $\pm$ 28.7} & \textbf{0.93$\times$} \\
+\textbf{Mean} & \textbf{96.4 $\pm$ 22.5} & \textbf{91.8 $\pm$ 26.3} & \textbf{0.95$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Finding.} Under matched conditions, the learned adversary produces a
-\textbf{0.93$\times$} OOD delivery ratio — the adversary-trained policy delivers
-\emph{fewer} packages OOD than the nature-trained policy in 4 of 5 seeds. This is
-a confirmed null result.
+\textbf{0.95$\times$} OOD delivery ratio. The adversary-trained policy is near
+parity with the nature-trained policy, but does \emph{not} produce a meaningful
+OOD gain under matched conditions. It is lower in 3 of 5 seeds and the 5-seed mean
+still favors the nature-trained policy. This is therefore a confirmed null result
+for the learned-adversary advantage hypothesis under these conditions.
 
 \begin{table}[H]
 \caption{Deterministic (Exp~1) vs.\ learned (Exp~9) adversary OOD comparison.}
 \label{tab:det-vs-learned}
 \centering
 \footnotesize
-\begin{tabular}{lrrrrr}
+\begin{tabular}{lrrr}
 \toprule
-\textbf{Adversary} & \textbf{Seeds} & \textbf{N$\to$N} & \textbf{A$\to$N} & \textbf{Ratio} \\
+\textbf{Adversary} & \textbf{N$\to$N Del} & \textbf{A$\to$N Del} & \textbf{Ratio} \\
 \midrule
-Deterministic (Exp~1) & 6 & 78.5 & 151.8 & \textbf{1.93$\times$} \\
-Learned (Exp~9)    & 5 & 95.8 & 89.6 & \textbf{0.93$\times$} \\
+Deterministic (Exp~1) & 78.5 & 151.8 & \textbf{1.93$\times$} \\
+Learned (Exp~9)    & 96.4 & 91.8 & \textbf{0.95$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The distinction between deterministic and learned adversaries is clear in this instance.
+The distinction between deterministic and learned adversaries remains clear in this
+matched comparison: the deterministic pursuer produces a large OOD advantage,
+whereas the learned adversary remains near parity. It is important to note that the N$\to$N delivery count here exceeds the Exp~1 deterministic adversary N$\to$N count (96.4 vs.\ 78.5) due to the additional training time (40k vs.\ 20k episodes).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
