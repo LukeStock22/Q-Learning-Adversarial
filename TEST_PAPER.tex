@@ -144,7 +144,7 @@ Tessler et al.~ also explore robustness with action uncertainty, where the agent
 Warehouse navigation and path planning under changing conditions has also been studied from an applied perspective. Kristiansson and Winkelmann compare A* planning to Q-learning-based approaches for robot path planning in dynamic warehouse environments, evaluating performance primarily using throughput (packages delivered per robot over time) and showing that RL approaches can be more adaptable in highly dynamic scenarios (though it may be prone to overfitting) \cite{kristiansson2025warehouse}. This work supports the practical motivation for learning-based policies when obstacles and traffic patterns vary during operation.  
 
 \subsection*{Multi-Agent and Moving-Opponent Settings}
-Dynamic adversaries can also be viewed through a multi-agent lens. Paczolay et al.~studies evasion with collision avoidance and propose a method combining Minimax-Q and Nash-Q to better account for opponents' actions in multi-agent settings \cite{paczolay2021pursuitevasion}. While the domain differs from warehouse logistics, it is a good example of modeling moving opponents and reasoning about adversarial behavior in grid-like environments.
+Dynamic adversaries can also be viewed through a multi-agent lens. Paczolay et al.~study evasion with collision avoidance and propose a method combining Minimax-Q and Nash-Q to better account for opponents' actions in multi-agent settings \cite{paczolay2021pursuitevasion}. While the domain differs from warehouse logistics, it is a good example of modeling moving opponents and reasoning about adversarial behavior in grid-like environments.
 
 \subsection*{Gap This Work Addresses}
 Prior work either (i) applies adversarial RL to continuous domains without
@@ -163,7 +163,7 @@ destination cell. The environment contains static shelves (blocked cells) and
 dynamic hazards. An episode terminates on successful delivery, collision with a
 terminal hazard, or timeout (200 steps on 5$\times$5; 300 on 7$\times$7).
 
-At each step the agent selects one of four cardinal actions. The reward structure penalizes time and collisions while rewarding task progress (Figure~\ref{fig:rewards}). Distance shaping (scale = 1.0) is applied uniformly to both nature and adversary policies in all systematic experiments. Since both policies train under identical shaping, it does not bias the comparison. Delivery fraction is the primary reported metric. 
+At each step the agent selects one of four cardinal actions. The reward structure penalizes time and collisions while rewarding task progress (Figure~\ref{fig:rewards}). In the systematic evaluation reported later (Experiments~1--3 and 9--24), distance shaping (scale = 1.0) is applied uniformly to both nature and adversary policies. The exploratory runs in Section~\ref{sec:exploratory} do not all use shaping. Since both policies train under identical shaping in the systematic experiments, it does not bias the comparison. Delivery fraction is the primary reported metric. 
 
 \begin{figure}[H]
   \centering
@@ -173,6 +173,7 @@ At each step the agent selects one of four cardinal actions. The reward structur
   \begin{itemize}\itemsep0pt \parskip0pt \parsep0pt
     \item Step penalty: \texttt{-2.0}
     \item Obstacle penalty: \texttt{-3.0}
+    \item Agent-agent collision penalty: \texttt{-5.0}
     \item Adversary/Forklift penalty: \texttt{-50.0}
     \item Pickup reward: \texttt{+25.0}
     \item Delivery reward: \texttt{+100.0}
@@ -212,14 +213,17 @@ We study two adversary designs:
 
 \subsection{State Representation}
 
-The agent's state encodes its position, the dynamic entity's position, and the
-package status:
+For the base single-agent, single-package setting used in the main comparison
+experiments, the agent's state encodes its position, the dynamic entity's
+position, and the package status:
 \[
   n_\text{states} = \underbrace{N^2}_{\text{agent pos}} \times \underbrace{N^2}_{\text{dynamic pos}} \times \underbrace{3}_{\text{pkg status}}
 \]
 For 5$\times$5 grids this gives $25 \times 25 \times 3 = 1{,}875$ states;
-for 7$\times$7, $49 \times 49 \times 3 = 7{,}203$ states. Section~\ref{sec:stateexp}
-describes experiments with alternative encodings.
+for 7$\times$7, $49 \times 49 \times 3 = 7{,}203$ states. Later boundary
+experiments modify package count, agent count, and adversary count, which
+changes the table size further. Section~\ref{sec:stateexp} describes experiments
+with alternative encodings.
 
 
 \subsection{Policy Comparison Protocol}
@@ -254,11 +258,11 @@ secondary metric, in addition to collision count and steps.
 \section{Experiment Pipeline}
 \label{sec:pipeline}
 
-Our workflow is fully configuration-driven. A baseline config
+Our workflow is configuration-driven. A baseline config
 (\texttt{configs/default.yaml}) is deep-merged with an experiment-specific
-override (\texttt{configs/experiments/*.yaml}), and the exact merged config is
-saved alongside outputs as \texttt{config\_used.yaml}. All reported results are
-tied to versioned, reproducible configurations.
+override (\texttt{configs/experiments/*.yaml}), and the exact merged config used
+for a run is saved alongside outputs as \texttt{config\_used.yaml}. This makes
+the reported parameter settings auditable and improves reproducibility.
 
 Each experiment produces:
 \texttt{csv/} (training rewards, cross-scenario matrices),
