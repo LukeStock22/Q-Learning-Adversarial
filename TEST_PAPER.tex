@@ -254,8 +254,9 @@ making average reward a poor indicator of task success. We report reward as a
 secondary metric, in addition to collision count and steps.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Experiment Pipeline}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{sec:pipeline}
 
 Our workflow is configuration-driven. A baseline config
@@ -306,8 +307,9 @@ calibrate the task and identify which design choices mattered. We summarize the
 key findings here. These runs are not used in the main statistical claims.
 
 \textbf{Nature baseline.} The nature-trained policy achieves strong ID-A performance
-(86.80 reward, 47/50 deliveries) but poor OOD transfer
-($-433.67$ reward, 28/250 deliveries). OOD generalization is clearly the challenge.
+(88.36 reward, 47/50 deliveries) but poor OOD transfer
+($-277.16$ reward, 94/500 deliveries, 288 collisions). OOD generalization is
+clearly the challenge.
 
 \begin{figure}[t]
   \centering
@@ -320,14 +322,22 @@ key findings here. These runs are not used in the main statistical claims.
 
 \textbf{Deterministic vs.\ learned adversary (early runs).} Our baseline deterministic-
 adversary run (\texttt{outputs/default}) yielded strong adversary-trained ID-A
-(94.40 reward) but poor OOD ($-101.51$). Switching to a learned adversary
-(\texttt{outputs/learningadversary}) dropped both ID-A (33.84) and OOD ($-119.32$), suggesting at first that learned adversaries were simply harder to train against. Later in the paper we continue to explore both since the deterministic adversary produced more promising OOD results, but we have great interest in determining if an adversary that learns to actively interfere in the most impactful way meaningfully increases training pressure and improves generalization. 
+(98.86 A$\to$A reward, 50/50 deliveries) but poor OOD A$\to$A performance
+($-75.86$, 34/500 deliveries). An early
+learned-adversary run (\texttt{outputs/learningadversary}) achieved lower A$\to$A
+ID-A reward (79.60, also 50/50 deliveries) with similarly poor OOD A$\to$A
+reward ($-74.08$, 30/500 deliveries). These single-seed exploratory runs
+therefore suggested that a learned adversary was harder to train against
+in-distribution, but they did not by themselves justify a strong conclusion
+about OOD transfer. We retain both adversary types in the systematic study
+below and resolve the comparison there using controlled, multi-seed
+experiments.
 
 \textbf{Distance shaping and context.} Adding distance shaping alone improved
 ID-A ($A\to A = 108.66$) without resolving OOD falloff. Adding relative
 package/destination context without shaping caused brittle OOD behavior
 ($-400$ reward, zero deliveries in some cells), consistent with state space
-sparsity — an early signal of the coverage problem later confirmed in
+sparsity, an early signal of the coverage problem later confirmed in
 Section~\ref{sec:audit}. The OOD numbers from experiments that combined context
 features with shaping (\texttt{la\_ic\_ds}, \texttt{la\_zs\_ic\_ds}) are
 invalidated by the same state space explosion and are not used as evidence here.
@@ -355,8 +365,8 @@ marked $\dagger$ are invalid due to state space explosion
 \toprule
 \textbf{Experiment} & \textbf{ID-A A$\to$A Reward} & \textbf{OOD A$\to$A Reward} \\
 \midrule
-\texttt{default} (det.\ adversary) & 94.40 & -101.51 \\
-\texttt{learningadversary}         & 33.84 & -119.32 \\
+\texttt{default} (det.\ adversary) & 98.86 & -75.86 \\
+\texttt{learningadversary}         & 79.60 & -74.08 \\
 \texttt{la\_ic\_ds} (general-sum)  & 91.42 & $-63.61^\dagger$  \\
 \texttt{la\_zs\_ic\_ds} (zero-sum) & 66.38 & $-103.32^\dagger$ \\
 \bottomrule
