@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import tempfile
 from pathlib import Path
 
@@ -18,12 +19,33 @@ from .utils import ensure_dir, seed_everything
 
 MOVING_AVG_WINDOW = 20
 METRICS_FILENAME = "metrics.txt"
+CONFIG_USED_FILENAME = "config_used.yaml"
 
 
 def load_config(path: Path) -> dict:
-    """Load YAML configuration into a dictionary."""
+    """Load YAML config and deep-merge it onto configs/default.yaml when present."""
     with path.open("r", encoding="utf-8") as handle:
-        return yaml.safe_load(handle)
+        config = yaml.safe_load(handle) or {}
+
+    default_path = Path("configs/default.yaml")
+    if path.resolve() == default_path.resolve() or not default_path.exists():
+        return config
+
+    with default_path.open("r", encoding="utf-8") as handle:
+        default_config = yaml.safe_load(handle) or {}
+
+    return deep_merge(default_config, config)
+
+
+def deep_merge(base: dict, override: dict) -> dict:
+    """Recursively merge override into base and return a new dict."""
+    merged = copy.deepcopy(base)
+    for key, value in override.items():
+        if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
+            merged[key] = deep_merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
 
 
 def apply_run_name(config: dict, run_name: str | None) -> dict:
@@ -207,6 +229,13 @@ def save_rewards_and_plot(csv_dir: Path, curve_dir: Path, name: str, rewards: li
     plt.close()
 
 
+def save_used_config(output_root: Path, config: dict) -> None:
+    """Persist the merged config used for a run alongside its outputs."""
+    config_path = output_root / CONFIG_USED_FILENAME
+    with config_path.open("w", encoding="utf-8") as handle:
+        yaml.safe_dump(config, handle, sort_keys=False)
+
+
 def save_rollout_gif(
     env: GridworldEnv,
     agent: MultiAgentQLearning,
@@ -266,6 +295,7 @@ def run_comparison(config: dict) -> None:
     png_dir = ensure_dir(output_root / "png")
     gif_dir = ensure_dir(output_root / "gif")
     txt_dir = ensure_dir(output_root / "txt")
+    save_used_config(output_root, config)
 
     train_episodes = int(tier_cfg.get("train_episodes", 5000))
     eval_episodes = int(tier_cfg.get("eval_episodes", 50))
@@ -554,6 +584,7 @@ def run_single(config: dict) -> None:
     curve_dir = ensure_dir(output_root / "learningcurves")
     png_dir = ensure_dir(output_root / "png")
     gif_dir = ensure_dir(output_root / "gif")
+    save_used_config(output_root, config)
 
     tier = run.get("tier", "debug")
     tier_cfg = run.get(tier, {})

@@ -231,6 +231,7 @@ class GridworldEnv:
         self._agent_carrying: list[int | None] = []
         self._terminal_status: str | None = None
         self._episode_count = 0
+        self._training_episode = 0
         self._adversary_moves_used = 0
         self._adversary_q_table = np.zeros((size * size * size * size, self.ADVERSARY_ACTION_COUNT), dtype=float)
 
@@ -268,11 +269,12 @@ class GridworldEnv:
             self._adversary_positions = []
 
         if self.adversary_policy == self.ADVERSARY_POLICY_LEARNING:
-            frozen = self.adversary_freeze_episode > 0 and self._episode_count > self.adversary_freeze_episode
+            episode_ref = self._active_training_episode()
+            frozen = self.adversary_freeze_episode > 0 and episode_ref > self.adversary_freeze_episode
             if frozen:
                 self._adversary_learning_epsilon = self.adversary_learning_epsilon_end
             else:
-                progress = min(1.0, self._episode_count / self.adversary_learning_epsilon_decay_episodes)
+                progress = min(1.0, episode_ref / self.adversary_learning_epsilon_decay_episodes)
                 self._adversary_learning_epsilon = (
                     self.adversary_learning_epsilon_start
                     + progress * (self.adversary_learning_epsilon_end - self.adversary_learning_epsilon_start)
@@ -284,6 +286,14 @@ class GridworldEnv:
             self.forklift_positions = []
 
         return tuple(self._agent_positions)
+
+    def set_training_episode(self, episode: int) -> None:
+        """Record the global training episode currently being executed."""
+        self._training_episode = max(0, int(episode))
+
+    def _active_training_episode(self) -> int:
+        """Return the global training episode when available, else the local episode count."""
+        return self._training_episode if self._training_episode > 0 else self._episode_count
 
     def encode_state(self, state: tuple[tuple[int, int], ...]) -> int:
         """Map (agent positions, dynamic entities, package state) to a single index."""
@@ -524,7 +534,7 @@ class GridworldEnv:
         """Update adversary Q-table from saved transition and objective."""
         if not transition:
             return
-        if self.adversary_freeze_episode > 0 and self._episode_count > self.adversary_freeze_episode:
+        if self.adversary_freeze_episode > 0 and self._active_training_episode() > self.adversary_freeze_episode:
             return
 
         if self.adversary_learning_objective == self.ADVERSARY_OBJECTIVE_ZERO_SUM:

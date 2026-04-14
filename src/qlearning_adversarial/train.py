@@ -51,6 +51,7 @@ def train(
                 agent.epsilon = float(epsilon_start + progress * (epsilon_end - epsilon_start))
 
         active_env = _random.choice(env_list) if env_list else primary_env
+        active_env.set_training_episode(episode_idx)
         state = active_env.reset()
         total = 0.0
         done = False
