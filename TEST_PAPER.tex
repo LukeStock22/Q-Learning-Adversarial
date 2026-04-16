@@ -79,20 +79,20 @@ on Autonomous Agents and Multiagent Systems (AAMAS 2026)}{May 25 -- 29, 2026}
 We study tabular Q-learning in a gridworld warehouse environment and ask whether training against an active adversary produces delivery policies that generalize better to out-of-distribution (OOD) layouts than policies trained only against stochastic obstacles. We frame the problem as a controlled comparison between a nature regime (stochastic forklift hazards) and an adversary regime (a deterministic or learned pursuer), evaluating both on a cross-scenario matrix under in-distribution and OOD layout conditions.
 
 Our findings have four parts. First, training against a deterministic
-pursuer when only a single training layout is available produces a robust and consistent OOD delivery advantage: $1.89\times$--$3.01\times$ 
+pursuer when only a single training layout is available produces a robust and consistent OOD delivery advantage: protocol-level mean gains of $1.89\times$--$3.01\times$ 
 more packages delivered across 16 seeded runs and two grid sizes, with no reversals. Second, a 
 learned (strategic, co-evolving) adversary, once measured under valid state-space 
 conditions, produces no OOD benefit. Where the deterministic pursuer yields $1.93\times$,
  the learned adversary yields $0.95\times$ in the first valid single-layout comparison. 
- These results are consistent with the idea that stable, predictable training pressure may be more useful for OOD transfer than a co-evolving opponent whose behavior changes during training. 
- Third, the key mechanism is state space coverage: multi-layout training more than 
+ These results suggest that stable, predictable training pressure may be more useful for OOD transfer than a co-evolving opponent whose behavior changes during training. 
+ Third, the results point to state space coverage as a major mechanism: multi-layout training more than 
  doubles OOD delivery for both adversary types, while state-space expansion beyond training coverage 
  hurts OOD performance. Fourth, the deterministic adversary effect has context-dependent
   boundary conditions under the multi-layout regime. Starting from a below-parity deterministic 
   baseline ($0.92\times$), some harder settings move the ratio above 1 
   (added packages: $1.81\times$; 7$\times$7 + 2 shelves: $1.26\times$), while others produce 
   only weak gains ($1.07\times$, $1.06\times$) or remain below parity 
-  (2 agents: $0.89\times$, 62{,}500 states). Together, these results identify both the mechanism 
+  (2 agents: $0.89\times$, 62{,}500 states). Together, these results clarify the likely mechanism 
   and the conditions under which adversarial training improves robustness in warehouse navigation.
 \end{abstract}
 
@@ -142,7 +142,7 @@ Our contributions are:
 \begin{enumerate}
   \item A multi-seed demonstration that deterministic
         adversary training, when only a single training layout is available, produces
-        consistent OOD delivery advantages
+        consistent protocol-level mean OOD delivery advantages
         ($1.89\times$--$3.01\times$) with no reversals across 16 seeded runs on 5$\times$5 and 7$\times$7 grids.
   \item A finding that reveals how state space explosion ($1{,}875
         \to 12.3\text{M}$ states) causes tabular Q-learning OOD evaluations to silently turn into random-walks, and a corrected measurement showing the
@@ -150,7 +150,7 @@ Our contributions are:
         null result ($0.95\times$).
   \item A systematic study of state representation and training diversity showing
         that multi-layout training more than doubles OOD delivery for both adversary
-        types, and that state space size is the bottleneck for OOD robustness in
+        types, and suggesting that state space size is the bottleneck for OOD robustness in
         tabular Q-learning.
  \item Boundary condition experiments showing that under the multi-layout regime,
         deterministic adversary training can re-emerge as beneficial in some harder
@@ -1175,7 +1175,7 @@ $0.89\times$ in Exp~19, with A$\to$N deliveries dropping from 219.2 to 208.8. On
 diversity is the
 primary source of Q-table coverage, freezing the learned adversary provides no
 additional help and may slightly hurt by locking in a policy that is still not a
-useful training curriculum. Together, these results point to two ideal conditions for the
+useful training curriculum. Together, these results point to two likely conditions for the
 OOD advantage observed with the deterministic adversary: (a)~a stable adversary
 policy throughout training so that Q-table updates do not cancel across phases, and
 (b)~a high-quality pursuit strategy from the first episode so that the delivery agent
@@ -1264,7 +1264,7 @@ generalization in a gridworld warehouse. The answer is that it depends on what
 kind of adversary and on the training regime.
 
 When training on a single layout against a deterministic pursuer, OOD delivery is consistently improved
-by $1.89\times$--$3.01\times$ across 16 seeded runs and two grid sizes, with no reversals.
+with protocol-level mean gains of $1.89\times$--$3.01\times$ across 16 seeded runs and two grid sizes, with no reversals.
 The advantage is larger on the 7$\times$7 protocol than on the 5$\times$5
 protocols (1.89$\times$--1.93$\times$ at 5$\times$5, 3.01$\times$ at 7$\times$7),
 though those experiments also differ in training budget and OOD evaluation volume.
@@ -1277,7 +1277,7 @@ paper's audit section on experiments 4--8 demonstrates how tabular RL OOD evalua
 can silently degrade into random-walk artifacts when state space size exceeds
 training coverage.
 
-The underlying mechanism is strongly tied to state coverage, especially
+The results point strongly to state coverage as the underlying mechanism, especially
 under the multi-layout regime, rather than to adversary type alone. Multi-layout
 training with a compact state encoding (Exps~14--15) doubles OOD delivery independently
 of adversary choice and collapses OOD collision rates from $\sim$300/500 to
@@ -1307,7 +1307,7 @@ training with a minimal state encoding is more effective than adversarial traini
 alone. If layout diversity in training is limited, a deterministic adversary can
 still provide reliable OOD robustness under the simpler single-layout conditions
 of Experiments~1--3, and in some harder multi-layout settings it can again become
-helpful. In both cases, a learned co-evolving adversary appears to be a nonfactor
+helpful. In both cases, a learned co-evolving adversary appears to be largely a nonfactor
 or counterproductive with a tabular Q-learning scheme.
 
 
