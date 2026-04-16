@@ -79,7 +79,7 @@ on Autonomous Agents and Multiagent Systems (AAMAS 2026)}{May 25 -- 29, 2026}
 We study tabular Q-learning in a gridworld warehouse environment and ask whether training against an active adversary produces delivery policies that generalize better to out-of-distribution (OOD) layouts than policies trained only against stochastic obstacles. We frame the problem as a controlled comparison between a nature regime (stochastic forklift hazards) and an adversary regime (a deterministic or learned pursuer), evaluating both on a cross-scenario matrix under in-distribution and OOD layout conditions.
 
 Our findings have four parts. First, training against a deterministic
-pursuer when only a single training layout is available produces a robust and consistent OOD delivery advantage: protocol-level mean gains of $1.89\times$--$3.01\times$ 
+pursuer when only a single training layout is available produces a robust and consistent OOD delivery advantage: protocol-level average gains of $1.89\times$--$3.01\times$ 
 more packages delivered across 16 seeded runs and two grid sizes, with no reversals. Second, a 
 learned (strategic, co-evolving) adversary, once measured under valid state-space 
 conditions, produces no OOD benefit. Where the deterministic pursuer yields $1.93\times$,
@@ -92,7 +92,7 @@ conditions, produces no OOD benefit. Where the deterministic pursuer yields $1.9
   baseline ($0.92\times$), some harder settings move the ratio above 1 
   (added packages: $1.81\times$; 7$\times$7 + 2 shelves: $1.26\times$), while others produce 
   only weak gains ($1.07\times$, $1.06\times$) or remain below parity 
-  (2 agents: $0.89\times$, 62{,}500 states). Together, these results clarify the likely mechanism 
+  (2 agents: $0.89\times$, 62{,}500 states). Together, these results identify the likely mechanism 
   and the conditions under which adversarial training improves robustness in warehouse navigation.
 \end{abstract}
 
