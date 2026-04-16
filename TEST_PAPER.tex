@@ -1,18 +1,38 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %%% LaTeX Template for AAMAS-2026 (based on sample-sigconf.tex)
-%%% Prepared by the AAMAS-2026 Publication Chairs based on the version from AAMAS-2025.
+%%% Prepared by the AAMAS-2026 Publication Chairs based on the version from AAMAS-2025. 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%% For camera-ready, use this
-\documentclass[sigconf]{aamas}
+%%% Start your document with the \documentclass command.
 
-\usepackage{balance}
+
+%%% == IMPORTANT ==
+%%% Use the first variant below for the final paper (including author information).
+%%% Use the second variant below to anonymize your submission (no author information shown).
+%%% For further information on anonymity and double-blind reviewing, 
+%%% please consult the call for paper information
+%%% https://cyprusconferences.org/aamas2026/submission-instructions/
+
+%%%% For anonymized submission, use this
+% \documentclass[sigconf,anonymous]{aamas} 
+
+%%%% For camera-ready, use this
+\documentclass[sigconf]{aamas} 
+
+
+%%% Load required packages here (note that many are included already).
+
+\usepackage{balance} % for balancing columns on the final page
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric}
 \usepackage{float}
-\usepackage{booktabs}
+\usepackage{xurl}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% AAMAS-2026 copyright block (do not change!)
 
 \setcopyright{ifaamas}
 \acmConference[AAMAS '26]{Proc.\@ of the 25th International Conference
@@ -23,6 +43,17 @@ on Autonomous Agents and Multiagent Systems (AAMAS 2026)}{May 25 -- 29, 2026}
 \acmDOI{}
 \acmPrice{}
 \acmISBN{}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% == IMPORTANT ==
+%%% Use this command to specify your submission number.
+%%% In anonymous mode, it will be printed on the first page.
+
+% \acmSubmissionID{<<submission id>>}
+
+%%% Use this command to specify the title of your paper.
 
 \title{Adversarial Q-Learning in Warehouse Environments}
 
@@ -45,10 +76,24 @@ on Autonomous Agents and Multiagent Systems (AAMAS 2026)}{May 25 -- 29, 2026}
 %%% Use this environment to specify a short abstract for your paper.
 
 \begin{abstract}
-We study tabular Q-learning in a gridworld warehouse environment and ask whether training against an active adversary produces delivery policies that generalize better to out-of-distribution (OOD) layouts than policies trained only against stochastic obstacles. We frame the problem as a controlled comparison between a \emph{nature} regime (stochastic forklift hazards) and an \emph{adversary} regime (a deterministic or learned pursuer), evaluating both on a cross-scenario matrix under in-distribution and OOD layout conditions.
+We study tabular Q-learning in a gridworld warehouse environment and ask whether training against an active adversary produces delivery policies that generalize better to out-of-distribution (OOD) layouts than policies trained only against stochastic obstacles. We frame the problem as a controlled comparison between a nature regime (stochastic forklift hazards) and an adversary regime (a deterministic or learned pursuer), evaluating both on a cross-scenario matrix under in-distribution and OOD layout conditions.
 
-Our findings have four parts. First, training against a \emph{deterministic}
-pursuer produces a robust and consistent OOD delivery advantage: $1.89\times$--$3.01\times$ more packages delivered across 16 seeds and two grid sizes, with no reversals. Second, a \emph{learned} (strategic, co-evolving) adversary (measured under controlled conditions) produces \emph{no} OOD benefit. Where the deterministic pursuer yields $1.93\times$, the learned adversary yields $0.93\times$. Adversary \emph{predictability}, not adversary \emph{difficulty}, drives OOD transfer. Third, the key mechanism is \emph{state space coverage}: training on multiple layouts achieves a $\sim$2.3$\times$ OOD improvement regardless of adversary type, while any state-space expansion beyond training coverage hurts OOD performance. Fourth, the deterministic adversary benefit is \emph{context-dependent}. Dense obstacles on small grids reverse the benefit ($0.85\times$ with 2~shelves on $5\times5$) by creating evasion tactics that exploit topology and fail OOD, while larger grids tolerate additional obstacles ($1.22\times$ on $7\times7$ with 2~shelves). Cooperative multi-agent settings retain a modest advantage ($1.18\times$). Together, these results identify both the mechanism and the conditions under which adversarial training improves robustness in warehouse navigation.
+Our findings have four parts. First, training against a deterministic
+pursuer when only a single training layout is available produces a robust and consistent OOD delivery advantage: $1.89\times$--$3.01\times$ 
+more packages delivered across 16 seeded runs and two grid sizes, with no reversals. Second, a 
+learned (strategic, co-evolving) adversary, once measured under valid state-space 
+conditions, produces no OOD benefit. Where the deterministic pursuer yields $1.93\times$,
+ the learned adversary yields $0.95\times$ in the first valid single-layout comparison. 
+ These results are consistent with the idea that stable, predictable training pressure may be more useful for OOD transfer than a co-evolving opponent whose behavior changes during training. 
+ Third, the key mechanism is state space coverage: multi-layout training more than 
+ doubles OOD delivery for both adversary types, while state-space expansion beyond training coverage 
+ hurts OOD performance. Fourth, the deterministic adversary effect has context-dependent
+  boundary conditions under the multi-layout regime. Starting from a below-parity deterministic 
+  baseline ($0.92\times$), some harder settings move the ratio above 1 
+  (added packages: $1.81\times$; 7$\times$7 + 2 shelves: $1.26\times$), while others produce 
+  only weak gains ($1.07\times$, $1.06\times$) or remain below parity 
+  (2 agents: $0.89\times$, 62{,}500 states). Together, these results identify both the mechanism 
+  and the conditions under which adversarial training improves robustness in warehouse navigation.
 \end{abstract}
 
 
@@ -62,6 +107,14 @@ pursuer produces a robust and consistent OOD delivery advantage: $1.89\times$--$
 %%% Include any author-defined commands here.
          
 \newcommand{\BibTeX}{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em\TeX}
+\newcommand{\codepath}[1]{\path{#1}}
+\newcommand{\optionalpaperfigure}[3]{%
+  \IfFileExists{#1}{%
+    \includegraphics[width=#2]{#1}%
+  }{%
+    \fbox{\parbox[c][0.22\textheight][c]{#2}{\centering\footnotesize Placeholder for #3}}%
+  }%
+}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -81,27 +134,38 @@ pursuer produces a robust and consistent OOD delivery advantage: $1.89\times$--$
 
 \section{Introduction}
 
-Warehouse automation environments are highly dynamic and even chaotic in practice. Increasingly popular delivery robots must reach a package, pick it up, and deliver it while operating around traffic and disruptions (e.g., moving forklifts, shelving, blocked aisles). The central problem in this papaer is not only whether an RL policy can solve one fixed environment, but whether a policy trained under one disturbance regime transfers robustly to unseen layouts and disturbance realizations.
+Warehouse automation environments are highly dynamic and even chaotic in practice. Increasingly popular delivery robots must reach a package, pick it up, and deliver it while operating around traffic and disruptions (e.g., moving forklifts, shelving, blocked aisles). The central problem in this paper is not only whether an RL policy can solve one fixed environment, but whether a policy trained under one disturbance regime transfers robustly to unseen layouts and disturbance realizations.
 
 Motivated by robust/adversarial RL and dynamic-warehouse navigation literature \cite{pinto2017rarl,tessler2019actionrobust,kristiansson2025warehouse}, we frame our work as a controlled comparison between two training strategies in the same gridworld task: (i) training against stochastic disturbances (``nature''), and (ii) training against an active adversary (``adversary''). We evaluate both trained policies under identical protocols with in-distribution evaluation (ID-A: same base layout as training) and out-of-distribution evaluation (OOD-layout: unseen layouts).
 
 Our contributions are:
 \begin{enumerate}
-  \item A multi-seed demonstration that \emph{deterministic}
-        adversary training produces consistent OOD delivery advantages
-        ($1.89\times$--$3.01\times$) with no reversals across 16 seeds on 5$\times$5 and 7$\times$7 grids.
+  \item A multi-seed demonstration that deterministic
+        adversary training, when only a single training layout is available, produces
+        consistent OOD delivery advantages
+        ($1.89\times$--$3.01\times$) with no reversals across 16 seeded runs on 5$\times$5 and 7$\times$7 grids.
   \item A finding that reveals how state space explosion ($1{,}875
         \to 12.3\text{M}$ states) causes tabular Q-learning OOD evaluations to silently turn into random-walks, and a corrected measurement showing the
-        learned adversary produces a legitimate \textbf{null result} ($0.93\times$).
-  \item A systematic study of state representation and training diversity             showing that multi-layout training doubles OOD delivery independently         of adversary type, and that state space size is the bottleneck for OOD         robustness in tabular Q-learning.
-  \item Scaling experiments showing that the deterministic                              adversary advantage is topology-dependent. Dense obstacles on small           grids reverse the benefit ($0.85\times$ on $5\times5$ with 2~shelves)         while larger grids tolerate additional obstacles ($1.22\times$ on             $7\times7$), with obstacle density relative to grid size as the key           variable.
+        learned adversary, under valid state-space conditions, produces a legitimate
+        null result ($0.95\times$).
+  \item A systematic study of state representation and training diversity showing
+        that multi-layout training more than doubles OOD delivery for both adversary
+        types, and that state space size is the bottleneck for OOD robustness in
+        tabular Q-learning.
+ \item Boundary condition experiments showing that under the multi-layout regime,
+        deterministic adversary training can re-emerge as beneficial in some harder
+        settings (added packages: $1.81\times$; 7$\times$7 + 2 shelves: $1.26\times$),
+        produces only weak positive shifts in some others (added shelves on $5\times5$:
+        $1.07\times$; added adversary: $1.06\times$), and remains below parity when
+        cooperative multi-agent state space expansion (62{,}500 states) exceeds
+        training coverage capacity ($0.89\times$).
 \end{enumerate}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Related Work}
 
 \subsection*{Robust and Adversarial Reinforcement Learning}
-A major challenge in reinforcement learning is that policies trained in one setting often perform poorly when the environment changes (different obstructions, dynamics, or disturbances). This can cause a gap between simulated and real-world performance. Pinto et al.~propose \emph{Robust Adversarial Reinforcement Learning (RARL)} which frames robustness as a two-player, zero-sum minimax problem in which an adversary learns to apply destabilizing disturbances while the agent learns to succeed despite them \cite{pinto2017rarl}. Their results in continuous-control benchmarks demonstrate that explicitly training against a learned adversary can improve robustness and sometimes even performance in settings not trained on.
+A major challenge in reinforcement learning is that policies trained in one setting often perform poorly when the environment changes (different obstructions, dynamics, or disturbances). This can cause a gap between simulated and real-world performance. Pinto et al.~propose Robust Adversarial Reinforcement Learning (RARL), which frames robustness as a two-player, zero-sum minimax problem in which an adversary learns to apply destabilizing disturbances while the agent learns to succeed despite them \cite{pinto2017rarl}. Their results in continuous-control benchmarks demonstrate that explicitly training against a learned adversary can improve robustness and sometimes even performance in settings not trained on.
 
 Tessler et al.~ also explore robustness with action uncertainty, where the agent's chosen action may be replaced by an adversarial alternative with some probability, or perturbed in continuous action spaces \cite{tessler2019actionrobust}. They relate these models to real-world robotics uncertainty (e.g., sudden pushes or actuator disturbances) and provide algorithms and evaluations in continuous-control domains.
 
@@ -109,7 +173,7 @@ Tessler et al.~ also explore robustness with action uncertainty, where the agent
 Warehouse navigation and path planning under changing conditions has also been studied from an applied perspective. Kristiansson and Winkelmann compare A* planning to Q-learning-based approaches for robot path planning in dynamic warehouse environments, evaluating performance primarily using throughput (packages delivered per robot over time) and showing that RL approaches can be more adaptable in highly dynamic scenarios (though it may be prone to overfitting) \cite{kristiansson2025warehouse}. This work supports the practical motivation for learning-based policies when obstacles and traffic patterns vary during operation.  
 
 \subsection*{Multi-Agent and Moving-Opponent Settings}
-Dynamic adversaries can also be viewed through a multi-agent lens. Paczolay et al.~studies evasion with collision avoidance and propose a method combining Minimax-Q and Nash-Q to better account for opponents' actions in multi-agent settings \cite{paczolay2021pursuitevasion}. While the domain differs from warehouse logistics, it is a good example of modeling moving opponents and reasoning about adversarial behavior in grid-like environments.
+Dynamic adversaries can also be viewed through a multi-agent lens. Paczolay et al.~study evasion with collision avoidance and propose a method combining Minimax-Q and Nash-Q to better account for opponents' actions in multi-agent settings \cite{paczolay2021pursuitevasion}. While the domain differs from warehouse logistics, it is a good example of modeling moving opponents and reasoning about adversarial behavior in grid-like environments.
 
 \subsection*{Gap This Work Addresses}
 Prior work either (i) applies adversarial RL to continuous domains without
@@ -126,9 +190,9 @@ We model a warehouse as a discrete $N\times N$ gridworld. A single delivery agen
 must navigate to a package location, pick it up, and deliver it to a designated
 destination cell. The environment contains static shelves (blocked cells) and
 dynamic hazards. An episode terminates on successful delivery, collision with a
-terminal hazard, or timeout (200 steps on 5$\times$5; 300 on 7$\times$7).
+terminal hazard, or timeout (200 steps on both 5$\times$5 and 7$\times$7).
 
-At each step the agent selects one of four cardinal actions. The reward structure penalizes time and collisions while rewarding task progress (Figure~\ref{fig:rewards}). Distance shaping (scale = 1.0) is applied uniformly to both nature and adversary policies in all systematic experiments. Since both policies train under identical shaping, it does not bias the comparison. Delivery fraction is the primary reported metric. 
+At each step the agent selects one of four cardinal actions. The reward structure penalizes time and collisions while rewarding task progress (Figure~\ref{fig:rewards}). In the systematic evaluation reported later (Experiments~1--3 and 9--24), distance shaping (scale = 1.0) is applied uniformly to both nature and adversary policies. The exploratory runs in Section~\ref{sec:exploratory} do not all use shaping. Since both policies train under identical shaping in the systematic experiments, it does not bias the comparison. Delivery count is the primary task-success metric. 
 
 \begin{figure}[H]
   \centering
@@ -138,6 +202,7 @@ At each step the agent selects one of four cardinal actions. The reward structur
   \begin{itemize}\itemsep0pt \parskip0pt \parsep0pt
     \item Step penalty: \texttt{-2.0}
     \item Obstacle penalty: \texttt{-3.0}
+    \item Agent-agent collision penalty: \texttt{-5.0}
     \item Adversary/Forklift penalty: \texttt{-50.0}
     \item Pickup reward: \texttt{+25.0}
     \item Delivery reward: \texttt{+100.0}
@@ -152,7 +217,7 @@ At each step the agent selects one of four cardinal actions. The reward structur
 \begin{figure}[H]
   \centering
   % Put your image file in the Overleaf project (e.g., under figs/)
-  \includegraphics[width=0.85\linewidth]{env-example.png}
+  \optionalpaperfigure{env-example.png}{0.85\linewidth}{environment visualization}
   \caption{Example warehouse gridworld layout for the adversary scenario. Colors indicate the start cell, package location, destination, shelf (blocked) cells, and the adversary position.}
   \label{fig:env-map-example}
   \Description{A 5x5 gridworld visualization showing a start cell in blue, a package in yellow, a destination in green, shelf obstacles in dark gray, and an adversary in magenta, with a legend.}
@@ -168,30 +233,33 @@ navigate around it.
 \textbf{Adversary scenario.} An active pursuer moves toward the delivery agent with probability 0.5.
 We study two adversary designs:
 \begin{itemize}
-  \item \emph{Deterministic pursuit}: greedy Manhattan-distance minimization with
+  \item Deterministic pursuit: greedy Manhattan-distance minimization with
         random tie-breaking. Its policy is fixed.
-  \item \emph{Learned adversary}: a tabular Q-learner with a zero-sum objective
+  \item Learned adversary: a tabular Q-learner with a zero-sum objective
         against the delivery agent ($r_\text{adv} = -r_\text{delivery}$). It
         co-evolves with the delivery agent during training.
 \end{itemize}
 
 \subsection{State Representation}
 
-The agent's state encodes its position, the dynamic entity's position, and the
-package status:
+For the base single-agent, single-package setting used in the main comparison
+experiments, the agent's state encodes its position, the dynamic entity's
+position, and the package status:
 \[
   n_\text{states} = \underbrace{N^2}_{\text{agent pos}} \times \underbrace{N^2}_{\text{dynamic pos}} \times \underbrace{3}_{\text{pkg status}}
 \]
 For 5$\times$5 grids this gives $25 \times 25 \times 3 = 1{,}875$ states;
-for 7$\times$7, $49 \times 49 \times 3 = 7{,}203$ states. Section~\ref{sec:stateexp}
-describes experiments with alternative encodings.
+for 7$\times$7, $49 \times 49 \times 3 = 7{,}203$ states. Later boundary
+experiments modify package count, agent count, and adversary count, which
+changes the table size further. Section~\ref{sec:stateexp} describes experiments
+with alternative encodings.
 
 
 \subsection{Policy Comparison Protocol}
 
 For each experimental run we train two delivery policies:
-(1)~a \emph{nature-trained} policy, and (2)~an \emph{adversary-trained} policy.
-Both are then evaluated in a \textbf{cross-scenario matrix}:
+(1)~a nature-trained policy, and (2)~an adversary-trained policy.
+Both are then evaluated in a cross-scenario matrix:
 
 \begin{itemize}
   \item \textbf{N$\to$N}: nature-trained policy, nature evaluation
@@ -206,7 +274,7 @@ Each matrix cell is evaluated under two layout conditions:
   \item \textbf{OOD-layout}: 10 or more unseen layouts with randomized shelf, package, and start positions, not used during training.
 \end{itemize}
 
-The headline metric is the \textbf{OOD delivery ratio A$\to$N / N$\to$N}: how many more packages the adversary-trained policy delivers than the nature-trained policy on unseen layouts, in a nature evaluation (no pursuer at test time). This is the cleanest test of OOD transfer: the adversary only exists during training, not evaluation.
+The headline metric is the OOD delivery ratio A$\to$N / N$\to$N: how many more packages the adversary-trained policy delivers than the nature-trained policy on unseen layouts, in a nature evaluation (no pursuer at test time). This is the cleanest test of OOD transfer: the adversary only exists during training, not evaluation.
 
 \textbf{Why delivery count, not reward?} Step penalties ($-2$/step) accumulate
 heavily when an agent takes long evasive paths. An agent caught early incurs fewer
@@ -215,22 +283,23 @@ making average reward a poor indicator of task success. We report reward as a
 secondary metric, in addition to collision count and steps.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Experiment Pipeline}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{sec:pipeline}
 
-Our workflow is fully configuration-driven. A baseline config
-(\texttt{configs/default.yaml}) is deep-merged with an experiment-specific
-override (\texttt{configs/experiments/*.yaml}), and the exact merged config is
-saved alongside outputs as \texttt{config\_used.yaml}. All reported results are
-tied to versioned, reproducible configurations.
+Our workflow is configuration-driven. A baseline config
+(\codepath{configs/default.yaml}) is deep-merged with an experiment-specific
+override (\codepath{configs/experiments/*.yaml}), and the exact merged config used
+for a run is saved alongside outputs as \codepath{config_used.yaml}. This makes
+the reported parameter settings auditable and improves reproducibility.
 
 Each experiment produces:
-\texttt{csv/} (training rewards, cross-scenario matrices),
-\texttt{learningcurves/} (reward trajectories),
-\texttt{gif/} (rollout animations),
-\texttt{txt/metrics.txt} (compact run summary), and
-\texttt{pkl/} (serialized Q-tables and configs for replay).
+\codepath{csv/} (training rewards, cross-scenario matrices),
+\codepath{learningcurves/} (reward trajectories),
+\codepath{gif/} (rollout animations),
+\codepath{txt/metrics.txt} (compact run summary), and
+\codepath{pkl/} (serialized Q-tables and configs for replay).
 
 \begin{figure}[t]
 \centering
@@ -241,12 +310,12 @@ Each experiment produces:
   io/.style={box, fill=blue!5}, proc/.style={box, fill=green!5},
   outbox/.style={box, fill=orange!8}, arr/.style={->, thick}
 ]
-\node[io] (default) {\textbf{Base config:} \texttt{configs/default.yaml}};
-\node[io, below=of default] (override) {\textbf{Override:} \texttt{configs/experiments/<name>.yaml}};
-\node[proc, below=of override] (runner) {\textbf{Run:} deep-merge configs, save \texttt{config\_used.yaml}};
+\node[io] (default) {\textbf{Base config:}\\ \codepath{configs/default.yaml}};
+\node[io, below=of default] (override) {\textbf{Override:}\\ \codepath{configs/experiments/<name>.yaml}};
+\node[proc, below=of override] (runner) {\textbf{Run:}\\ deep-merge configs, save \codepath{config_used.yaml}};
 \node[proc, below=of runner] (main) {\textbf{Train:} nature policy + adversary policy};
 \node[proc, below=of main] (eval) {\textbf{Evaluate:} cross-scenario matrix on ID-A and OOD layouts};
-\node[outbox, below=of eval] (artifacts) {\textbf{Artifacts:} \texttt{csv/}, \texttt{learningcurves/}, \texttt{gif/}, \texttt{txt/metrics.txt}, \texttt{pkl/}};
+\node[outbox, below=of eval] (artifacts) {\textbf{Artifacts:}\\ \codepath{csv/}, \codepath{learningcurves/}, \codepath{gif/},\\ \codepath{txt/metrics.txt}, \codepath{pkl/}};
 \draw[arr] (default.south) -- (override.north);
 \draw[arr] (override.south) -- (runner.north);
 \draw[arr] (runner.south) -- (main.north);
@@ -267,30 +336,41 @@ calibrate the task and identify which design choices mattered. We summarize the
 key findings here. These runs are not used in the main statistical claims.
 
 \textbf{Nature baseline.} The nature-trained policy achieves strong ID-A performance
-(86.80 reward, 47/50 deliveries) but poor OOD transfer
-($-433.67$ reward, 28/250 deliveries). OOD generalization is clearly the challenge.
+(88.36 reward, 47/50 deliveries) but poor OOD transfer
+($-277.16$ reward, 94/500 deliveries, 288 collisions). OOD generalization is
+clearly the challenge.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.85\linewidth]{learning-curves.png}
+  \optionalpaperfigure{learning-curves.png}{0.85\linewidth}{learning-curve figure}
   \caption{Reward learning curve for the nature-trained agent during training.}
   \label{fig:learning-curves-placeholder}
   \Description{Policy learning curve showing reward trajectory.}
 \end{figure}
 
 
-\textbf{Deterministic vs.\ learned adversary (early runs).} Our baseline deterministic-
-adversary run (\texttt{outputs/default}) yielded strong adversary-trained ID-A
-(94.40 reward) but poor OOD ($-101.51$). Switching to a learned adversary
-(\texttt{outputs/learningadversary}) dropped both ID-A (33.84) and OOD ($-119.32$), suggesting at first that learned adversaries were simply harder to train against. Later in the paper we continue to explore both since the deterministic adversary produced more promising OOD results, but we have great interest in determining if an adversary that learns to actively interfere in the most impactful way meaningfully increases training pressure and improves generalization. 
+\textbf{Deterministic vs.\ learned adversary (early runs).} Our baseline deterministic
+adversary run (\codepath{outputs/default}) yielded strong adversary-trained ID-A
+(98.86 A$\to$A reward, 50/50 deliveries) but poor OOD A$\to$A performance
+($-75.86$, 34/500 deliveries). An early
+learned adversary rerun (\codepath{outputs/learningadversary/rerun_fixed_eval})
+achieved slightly higher A$\to$A ID-A reward (101.80, also 50/50 deliveries)
+with similarly poor OOD A$\to$A performance ($-75.84$, 21/500 deliveries).
+These single-seed exploratory runs therefore do not support a claim
+that the learned adversary is harder to train against in the same-scenario
+setting. They only suggest that both adversary types still suffer poor OOD
+performance in this early regime. We retain both adversary types in the
+systematic study below and resolve the comparison there using controlled,
+multi-seed experiments.
 
 \textbf{Distance shaping and context.} Adding distance shaping alone improved
-ID-A ($A\to A = 108.66$) without resolving OOD falloff. Adding relative
+ID-A ($A\to A = 103.98$, 50/50 deliveries) without resolving OOD falloff
+($A\to A = -78.18$, 3/250 deliveries). Adding relative
 package/destination context without shaping caused brittle OOD behavior
 ($-400$ reward, zero deliveries in some cells), consistent with state space
-sparsity — an early signal of the coverage problem later confirmed in
+sparsity, an early signal of the coverage problem later confirmed in
 Section~\ref{sec:audit}. The OOD numbers from experiments that combined context
-features with shaping (\texttt{la\_ic\_ds}, \texttt{la\_zs\_ic\_ds}) are
+features with shaping (\codepath{la_ic_ds}, \codepath{la_zs_ic_ds}) are
 invalidated by the same state space explosion and are not used as evidence here.
 
 \textbf{General-sum vs.\ zero-sum learned adversary.} Qualitative review of
@@ -298,17 +378,20 @@ rollout animations revealed that the general-sum learned adversary frequently
 failed to move in ways that interfered with the delivery agent. It appeared
 passive rather than actively pursuing. This motivated a switch to a strict
 zero-sum objective ($r_\text{adv} = -r_\text{delivery}$), which produced
-qualitatively more credible adversary behavior. Despite lower overall reward
-(66.38 ID-A vs.\ 91.42 general-sum), collisions and deliveries remained healthy
-(3/50 collisions, 47/50 deliveries), with the lower return explained by longer
-average episode length (24.82 steps). This decision was based on ID-A behavior
-and qualitative observation, not OOD metrics. The zero-sum formulation became the
-reference design for all subsequent learned-adversary experiments.
+qualitatively more credible adversary behavior.
+The same-scenario quantitative difference is small: general-sum
+reaches 108.18 ID-A A$\to$A reward and zero-sum 107.84, with both delivering
+50/50 packages and incurring zero collisions. This decision is therefore best
+understood as one based on qualitative adversary behavior rather than on a
+strong quantitative same-scenario advantage. The zero-sum formulation became the
+reference design for all subsequent learned adversary experiments.
 
 \begin{table}[t]
-\caption{Representative same-scenario results from exploratory runs. OOD values
-marked $\dagger$ are invalid due to state space explosion
-(Section~\ref{sec:audit}); ID-A values for those runs remain valid.}
+\caption{Representative same-scenario results from exploratory runs. These values
+are included as exploratory context only and are not used in the paper's main
+OOD claims. The \codepath{la_ic_ds} and \codepath{la_zs_ic_ds} configurations are
+later invalidated for OOD transfer by state space explosion (Section~\ref{sec:audit}),
+so their OOD values are shown only as exploratory record.}
 \label{tab:early-core}
 \centering
 \footnotesize
@@ -316,10 +399,10 @@ marked $\dagger$ are invalid due to state space explosion
 \toprule
 \textbf{Experiment} & \textbf{ID-A A$\to$A Reward} & \textbf{OOD A$\to$A Reward} \\
 \midrule
-\texttt{default} (det.\ adversary) & 94.40 & -101.51 \\
-\texttt{learningadversary}         & 33.84 & -119.32 \\
-\texttt{la\_ic\_ds} (general-sum)  & 91.42 & $-63.61^\dagger$  \\
-\texttt{la\_zs\_ic\_ds} (zero-sum) & 66.38 & $-103.32^\dagger$ \\
+\codepath{default} (det.\ adversary) & 98.86 & -75.86 \\
+\codepath{learningadversary}         & 101.80 & -75.84 \\
+\codepath{la_ic_ds} (general-sum)  & 108.18 & -67.74  \\
+\codepath{la_zs_ic_ds} (zero-sum) & 107.84 & -90.05 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -328,15 +411,18 @@ These runs established that OOD generalization is the central challenge and that
 the zero-sum formulation with an active adversary was the natural baseline for
 deeper study.
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Main Results: Deterministic Adversary Training}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{sec:main}
 
 We ran three protocols to establish the OOD delivery advantage. All use the baseline 5$\times$5 (or 7$\times$7) state space with
 $n_\text{states} = 1{,}875$ (or $7{,}203$) and a deterministic pursuer.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Experiment 1: Seed Sweep (5$\times$5, 6 Seeds)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \textbf{Protocol.} 5$\times$5 grid, 20k training episodes, 10 OOD layouts
 $\times$ 50 eval episodes $= 500$ OOD episodes per cell, across 6 random seeds.
@@ -362,7 +448,7 @@ $\times$ 50 eval episodes $= 500$ OOD episodes per cell, across 6 random seeds.
 \end{tabular}
 \end{table}
 
-\textbf{Findings.} Adversary-trained policies deliver $\mathbf{1.93\times}$ more
+\textbf{Findings.} Adversary-trained policies deliver $1.93\times$ more
 packages OOD across all 6 seeds, with no reversals (ratio range: $1.52\times$--$3.39\times$).
 Collisions drop 15\% (340 to 291 per 500 episodes). In the OOD adversary scenario,
 the advantage is even larger: $2.31\times$ (42.8 vs.\ 18.5 deliveries per 500 eps).
@@ -373,24 +459,28 @@ training layout. The adversary-trained policy handles the same layout with 50/50
 deliveries. This illustrates that adversary training improves robustness even within
 the training distribution.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Experiment 2: Large OOD Protocol (5$\times$5, 5 Seeds)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \textbf{Protocol.} Same 5$\times$5 configuration, but 30 OOD layouts $\times$
 100 eval episodes $= 3{,}000$ OOD episodes per cell — 6$\times$ the volume of
 Experiment~1. Evaluated across 5 seeds.
 
 \textbf{Findings.} With 3,000 OOD episodes per cell, the advantage remains stable.
-Adversary-trained policies deliver $\mathbf{1.89\times}$ more packages in the nature
+Adversary-trained policies deliver $1.89\times$ more packages in the nature
 OOD setting (882 vs.\ 467, mean across 5 seeds). OOD collisions drop 15\% (2,048
 to 1,739 per 3,000 eps). The effect holds across all 5 seeds with no reversals.
 
 The reward confound is visible here: in the OOD adversary scenario, the
-nature-trained policy shows slightly better average reward ($-75.4$) than the
-adversary-trained policy ($-81.0$) despite delivering far fewer packages (103 vs.\
+nature-trained policy shows slightly better average reward ($-79.1$) than the
+adversary-trained policy ($-84.6$) despite delivering far fewer packages (103 vs.\
 191). This is because the nature-trained agent is captured quickly, ending episodes
 early and accumulating fewer step penalties. This reaffirms that delivery count and not reward/score is the correct metric.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Experiment 3: 7$\times$7 Grid (5 Seeds)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{sec:7x7}
 
 \textbf{Protocol.} Scaled to 7$\times$7 (7,203 states), 40k training episodes,
@@ -417,15 +507,14 @@ early and accumulating fewer step penalties. This reaffirms that delivery count 
 \end{table}
 
 \textbf{Findings.} The 7$\times$7 grid produces our strongest result:
-$\mathbf{3.01\times}$ OOD delivery advantage, no reversals across 5 seeds.
-Collisions drop 32\% (450 to 304 per 750 eps) — the largest collision reduction
-across all experiments. The advantage scales with grid size, consistent with the
-hypothesis that a pursuer forces the agent to explore a wider range of states as
-the environment grows more complex.
+$3.01\times$ OOD delivery advantage, no reversals across 5 seeds.
+Collisions drop 32\% (450 to 304 per 750 eps). The advantage is larger on this
+7$\times$7 protocol than in the 5$\times$5 protocols, which is consistent with,
+but does not isolate, a grid-size effect.
 
 \textbf{Tradeoff.} On ID-A nature evaluation (same training layout, no
-pursuer at test time), the adversary-trained policy achieves 48.6/50 deliveries but
-with substantially lower average reward (45.4 vs.\ 97.7 for nature-trained). The
+pursuer at test time), the adversary-trained policy achieves 47.2/50 deliveries but
+with substantially lower average reward (62.1 vs.\ 107.3 for nature-trained). The
 adversary-trained agent learned evasive long-path behavior against the pursuer; this
 over-caution persists when the pursuer is absent. The delivery count is nearly the
 same, but the agent takes far more steps to accomplish it. This tradeoff is worth noting and
@@ -450,29 +539,33 @@ Exp~3 & 7$\times$7, 750 OOD eps  & 5 & 56.6 $\pm$ 10.5  & \textbf{3.01$\times$} 
 \end{table}
 
 The deterministic adversary training advantage is established: consistent across
-three protocols, 16 seeds, and two grid sizes, with no reversals in the nature OOD
+three protocols, 16 seeded runs, and two grid sizes, with no reversals in the nature OOD
 setting.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Investigating the Learned Adversary}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{sec:learned}
 
-Our follow up question was: does a \emph{learned} (strategic, co-evolving)
-adversary produce even stronger OOD robustness? We tested five configurations
+Our follow-up question was whether a learned (strategic, co-evolving)
+adversary could produce even stronger OOD robustness. We tested five configurations
 varying adversary objective, learning rate, grid size, and freeze schedule
 (Experiments 4--8). Every variant appeared to show a weak OOD advantage ($\approx
-1.07\times$) — far below the deterministic result. But these results turned out to be entirely invalid.
+1.07\times$), far below the deterministic result. But these results turned out to be entirely invalid.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Methodological Audit: Experiments 4--8 Invalidated}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{sec:audit}
 
 After noticing that the four 5$\times$5 learned adversary configurations (Experiments 4--6
-and~8) produced \emph{bit-for-bit identical} A$\to$N OOD delivery counts
+and~8) produced bit-for-bit identical A$\to$N OOD delivery counts
 (79/135/93/131 per seed, regardless of adversary objective, learning rate, or
 freeze schedule), we traced the cause. Experiment~7 (7$\times$7 grid) produced
 different raw counts but was found to be invalid for the same structural reason.
-All five experiment configs had \texttt{include\_relative\_package\_destination:
-true} — a feature that augments the state with the relative $(dx, dy)$ offset from
+All five experiment configs had \codepath{include_relative_package_destination}
+set to true, a feature that augments the state with the relative $(dx, dy)$ offset from
 the agent to the package and a second $(dx, dy)$ offset from the agent to the
 delivery destination. The intention was to introduce a metric into the state space that would aid the delivery agent in package delivery. Instead, it had severe negative effects by drastically expanding the state space.
 
@@ -486,8 +579,8 @@ $9^4 = 6{,}561$:
 
 With 40k training episodes and $\sim$200 steps each ($\approx 8$M transitions), only
 $\sim$3,500 Q-table entries were ever populated which covered just 0.02\% of the table.
-\textbf{Every OOD state lookup returned all zeros.} The fallback action was
-\texttt{random.choice(all\_actions)}, seeded identically across all five experiment
+Every OOD state lookup returned all zeros. The fallback action was
+\codepath{random.choice(all_actions)}, seeded identically across all five experiment
 variants. As a result, the identical delivery counts were really just the
 same seeded random walk replayed five times and not policy comparisons.
 
@@ -496,28 +589,33 @@ The 1.07$\times$ ``null result'' from Experiments 4--8 was not a real measuremen
 \textbf{Lessons for tabular RL evaluation.} This failure mode is easy to miss since
 ID-A results remain valid (training-layout states ARE populated regardless of state
 space size), so the policy appears well-trained. Only OOD evaluation, where novel
-state combinations appear, exposes the coverage gap. We now verify Q-table coverage rates
-on OOD state lookups as part of every reported result.
+state combinations appear, exposes the coverage gap. We therefore checked OOD
+Q-table coverage before treating later learned adversary OOD results as valid.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Experiment 9: First Valid Learned Adversary Measurement}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{sec:exp9}
 
-We re-ran the learned adversary with \texttt{include\_relative\_package\_destination}
+We re-ran the learned adversary with \codepath{include_relative_package_destination}
 removed, restoring the 1,875-state space (matching Experiments 1--3). All other
 learned adversary settings were retained: zero-sum objective, adversary acts every
 step, 40k episodes, 5 seeds.
 
-\textbf{State coverage verified.} Post-run diagnostics confirmed 3,355/7,500
-Q-table entries nonzero (44.7\%), with a \textbf{63\% nonzero hit rate} on OOD
-state lookups — comparable to Experiments 1--3 (38--51\%). The evaluation reflects
-genuine policy behavior.
+\textbf{State coverage verified.} Post-run diagnostics on the delivery policy trained in the learned adversary regime
+confirmed 3,355 nonzero Q-values distributed across
+924 states with at least one nonzero action value. In the OOD A$\to$N evaluation,
+28,775 of 45,649 state lookups (63.0\%) hit states with at least one nonzero
+Q-value. This no longer exhibits the all-zero failure mode seen in
+Experiments~4--8, so the evaluation reflects genuine policy behavior rather than
+a seeded random walk.
 
 \begin{table}[H]
 \caption{Exp~9 OOD nature delivery results (500 eps per seed).}
 \label{tab:exp9}
 \centering
 \footnotesize
-\begin{tabular}{lrrrr}
+\begin{tabular}{lrrr}
 \toprule
 \textbf{Seed} & \textbf{N$\to$N Del} & \textbf{A$\to$N Del} & \textbf{Ratio} \\
 \midrule
@@ -525,47 +623,54 @@ genuine policy behavior.
 42  & 91  & 88  & 0.97$\times$ \\
 123 & 88  & 62  & 0.70$\times$ \\
 456 & 122 & 114 & 0.93$\times$ \\
-789 & 63  & 61  & 0.97$\times$ \\
+789 & 66  & 72  & 1.09$\times$ \\
 \midrule
-\textbf{Mean} & \textbf{95.8 $\pm$ 23.5} & \textbf{89.6 $\pm$ 28.7} & \textbf{0.93$\times$} \\
+\textbf{Mean} & \textbf{96.4 $\pm$ 22.5} & \textbf{91.8 $\pm$ 26.3} & \textbf{0.95$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Finding.} Under matched conditions, the learned adversary produces a
-\textbf{0.93$\times$} OOD delivery ratio — the adversary-trained policy delivers
-\emph{fewer} packages OOD than the nature-trained policy in 4 of 5 seeds. This is
-a confirmed null result.
+\textbf{Finding.} In this first valid low-state-space single-layout comparison, the learned adversary produces a
+0.95$\times$ OOD delivery ratio. The adversary-trained policy is near
+parity with the nature-trained policy, but does not produce a meaningful
+OOD gain in this setup. It is lower in 3 of 5 seeds and the 5-seed mean
+still favors the nature-trained policy. This is therefore a confirmed null result
+for the learned adversary advantage hypothesis under these conditions.
 
 \begin{table}[H]
 \caption{Deterministic (Exp~1) vs.\ learned (Exp~9) adversary OOD comparison.}
 \label{tab:det-vs-learned}
 \centering
 \footnotesize
-\begin{tabular}{lrrrrr}
+\begin{tabular}{lrrr}
 \toprule
-\textbf{Adversary} & \textbf{Seeds} & \textbf{N$\to$N} & \textbf{A$\to$N} & \textbf{Ratio} \\
+\textbf{Adversary} & \textbf{N$\to$N Del} & \textbf{A$\to$N Del} & \textbf{Ratio} \\
 \midrule
-Deterministic (Exp~1) & 6 & 78.5 & 151.8 & \textbf{1.93$\times$} \\
-Learned (Exp~9)    & 5 & 95.8 & 89.6 & \textbf{0.93$\times$} \\
+Deterministic (Exp~1) & 78.5 & 151.8 & \textbf{1.93$\times$} \\
+Learned (Exp~9)    & 96.4 & 91.8 & \textbf{0.95$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The distinction between deterministic and learned adversaries is clear in this instance.
+The distinction between deterministic and learned adversaries remains clear in this
+comparison: the deterministic pursuer produces a large OOD advantage, whereas the
+learned adversary remains near parity. It is important to note that this is not a
+fully matched ablation: the learned run differs in both training time (40k vs.\
+20k episodes) and adversary activity (move probability 1.0 vs.\ 0.5).
 
-%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{State Representation and Layout Diversity}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{sec:stateexp}
 
 Experiment~9 establishes a valid baseline for the learned adversary with 1,875
-states (5-seed mean: 95.8 OOD N$\to$N deliveries). We then tested three design
+states (5-seed mean: 96.4 OOD N$\to$N deliveries). We then tested three design
 interventions to improve OOD robustness: proximity-bucket encoding (Exps~10--11),
 coarse destination direction (Exps~12--13), and multi-layout training (Exps~14--15),
 with a combined variant in Exps~16--17. Each intervention is evaluated with both a
-deterministic and a learned (zero-sum) adversary across 5 seeds (77, 42, 123, 456, 789).
-The Exp~9 baseline is the full 5-seed mean of 95.8.
+deterministic and a learned (zero-sum) adversary across 5 seeds.
+The Exp~9 baseline is the full 5-seed mean of 96.4.
 
 \subsection{State Space Reference}
 
@@ -590,9 +695,9 @@ Baseline (Exps~1, 9)    & $25 \times 25 \times 3$        & 1,875      \\
 Proximity (Exps~10--11)     & $25 \times 5 \times 3$         & 375        \\
 Coarse dir. (Exps~12--13)  & $25 \times 25 \times 3 \times 81$ & 151,875 \\
 Multi-layout (Exps~14--15) & $25 \times 25 \times 3$        & 1,875      \\
-Prox. + Multi-layout  (Exps~16--17)            & $25 \times 25 \times 3 \times 81$ & 151,875 \\
+Coarse dir. + Multi-layout  (Exps~16--17)     & $25 \times 25 \times 3 \times 81$ & 151,875 \\
 Buggy (Exps~4--8)       & $1875 \times 9^4$              & 12,301,875 \\
-7$\times$7 baseline (Exps~2)   & $49 \times 49 \times 3$        & 7,203      \\
+7$\times$7 baseline (Exp~3)   & $49 \times 49 \times 3$        & 7,203      \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -606,47 +711,56 @@ per state (sparse). A 12.3M-state table gets $\approx 0.65$ visits per state
 
 %%%%
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Experiments 10--11: Proximity Encoding}
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \textbf{Design.} Replace the adversary's full grid position (25 values on 5$\times$5)
 with a 5-bucket directional proximity code (not-nearby / N / S / E / W, radius 2).
 State space shrinks from 1,875 to 375. 
 
-\textbf{Results.} In experiments 10 and 11 the OOD N$\to$N drops over 40\% attributable solely to the representation change and indicating it is harmful in general. The adversary advantage ratio is inconsistent: 1.4$\times$ for deterministic, 0.88$\times$ for learned (indicating adversarial policies also experienced a dropoff).
+\textbf{Results.} In Experiments~10--11, OOD N$\to$N falls to 48.2 in
+both variants, indicating that the representation change is harmful in general.
+Relative to the OOD N$\to$N baseline from Exp~9, this is roughly a
+50\% regression (96.4 $\to$ 48.2). The adversary-trained ratios are
+1.40$\times$ for deterministic and 1.97$\times$ for learned,
+but these ratios are inflated by the collapse of the N$\to$N denominator rather
+than by strong absolute performance.
 
-
-Crucially, the 
-protocols also deliver far fewer packages in absolute terms. OOD A$\to$N drops from 151.8 (Exp~1) to 67.6 (Exp~10: deterministic) and from 89.6 (Exp~9) to 49.8 (Exp~11: learned). The proximity encoding removes too much spatial structure for the agent to learn
-reliable navigation. For example, whether the adversary is 2 spaces N and 1 space W, 2 spaces N and 1 space E, or 1 space N and 1 space E, the state will just encode that information as N. 
+Crucially, the protocols still perform poorly in absolute terms. For the
+deterministic variant, OOD A$\to$N falls from 151.8 (Exp~1) to 67.6 (Exp~10).
+For the learned variant, OOD A$\to$N rises slightly from 91.8 (Exp~9) to 94.8
+(Exp~11), but this is still well below the OOD A$\to$N performance in experiment 1. The proximity encoding removes too much spatial structure for the
+agent to learn reliable navigation. For example, whether the adversary is 2
+spaces N and 1 space W, 2 spaces N and 1 space E, or 1 space N and 1 space E,
+the state will just encode that information as N.
 
 \textbf{Verdict: harmful.} Reducing spatial resolution via proximity encoding is harmful, even with a smaller state space.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Experiments 12--13: Coarse Destination Direction}
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \textbf{Design.} Add an 81-value feature encoding the agent's coarse direction toward
-the package ($\times$ 9 octant bins) and toward the delivery destination ($\times$
-9 octant bins). State space: $1{,}875 \times 81 = 151{,}875$. Unlike raw coordinate
-offsets (the buggy feature from Exps~4--8), octant direction is layout-agnostic and
-may generalize across OOD configurations.
+the package using 9 octant bins (N, NE, E, SE, S, SW, W, NW, and ``here'') and
+toward the delivery destination using the same 9 bins. The state space is
+$1{,}875 \times 81 = 151{,}875$. Unlike raw coordinate offsets, octant direction uses a compact 81-value encoding that keeps the state space far smaller than the buggy context expansion while still providing directional signal (more so than proximity encoding).
 
-\textbf{Results.} OOD N$\to$N improves to \textbf{115.8} (det) and \textbf{116.8}
-(la\_zs) — a \textbf{+21--22\% gain} over the baseline, with ID performance maintained
-at $\sim$48--49/50. OOD collisions remain high ($\sim$386/500) because the 81$\times$
-state expansion limits coverage density.
+\textbf{Results.} OOD N$\to$N improves from 96.4 to 115.8, roughly a
+20\% gain over its baseline, with ID
+performance maintained at $\sim$48--50/50. OOD collisions remain high
+($\sim$381/500), likely because the 81$\times$ state expansion still limits
+coverage density.
 
-Interestingly, the improvement does not apply to both adversarial protocols. With a learned adversary OOD A$\to$N rises from
-89.6 (baseline) to 118.4 but for a deterministic adversary OOD A$\to$N falls from 151.8 to 121.2. Both nature-trained and
-adversary-trained agents deliver more packages OOD when the coarse direction feature is
-present. The feature is informative for any policy attempting to navigate toward a
-destination in an unseen layout. The adversary-nature ratio remains near 1.0 (1.05$\times$
-det, 1.01$\times$ la\_zs), confirming the benefit is symmetric across training protocols
-rather than specific to one regime.
+The representation benefit is clearest for N$\to$N and does not translate into
+a stronger adversary-training effect. With a learned adversary, OOD A$\to$N
+rises from 91.8 (Exp~9) to 117.2, while for the deterministic adversary OOD
+A$\to$N falls from 151.8 (Exp~1) to 121.2. The net effect is convergence.
+Both variants end up with near-parity A$\to$N/N$\to$N ratios
+(1.05$\times$ deterministic, 1.01$\times$ learned), suggesting that the final
+OOD outcome here depends more on the representation than on adversary type.
 
-\textbf{Verdict: moderate benefit, no ID cost, symmetric across protocols.} The direction
-feature provides genuine navigational signal in unseen layouts for both nature and
-adversary-trained agents.
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Experiments 14--15: Multi-Layout Training}
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \textbf{Design.} Train on 10 randomly sampled layouts per run, selecting one each
 episode. The state space remains 1,875 (unchanged). Rather than adding information
 to the state, this approach diversifies the training curriculum.
@@ -654,52 +768,58 @@ to the state, this approach diversifies the training curriculum.
 \textbf{Results.}
 
 \begin{table}[H]
-\caption{Option D (multi-layout) OOD results vs.\ baseline.}
+\caption{Multi-layout training (Exps~14--15) OOD results vs.\ baseline.}
 \label{tab:optionD}
 \centering
 \footnotesize
-\begin{tabular}{lrrrrr}
+\begin{tabular}{lrrrr}
 \toprule
-\textbf{Config} & \textbf{N$\to$N Del} & \textbf{A$\to$N Del} & \textbf{Ratio} & \textbf{OOD Coll}  \\
+\textbf{Config} & \textbf{N$\to$N Del} & \textbf{A$\to$N Del} & \textbf{Ratio} & \textbf{OOD N$\to$N Coll}  \\
 \midrule
-Deterministic Baseline (Exp~1)   & 78.5  & 151.8  & 1.93$\times$ & $\sim$291  \\
-Learned Baseline (Exp~9)   & 95.8  & 89.6  & 0.93$\times$ & $\sim$300   \\
-Deterministic multi (Exp~14)          & 214.8 & 213.0 & 0.99$\times$ & $\sim$28    \\
-Learned multi (Exp~15)           & 214.8 & 214.6 & 1.00$\times$ & $\sim$23    \\
+Deterministic Baseline (Exp~1)   & 78.5  & 151.8  & 1.93$\times$ & $\sim$340  \\
+Learned Baseline (Exp~9)   & 96.4  & 91.8  & 0.95$\times$ & $\sim$305   \\
+Deterministic multi (Exp~14)          & 230.8 & 213.0 & 0.92$\times$ & $\sim$28    \\
+Learned multi (Exp~15)           & 230.8 & 219.2 & 0.95$\times$ & $\sim$28    \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-OOD N$\to$N delivery more than doubles indicating general improvements as a result of multi-layout training. More remarkably,
-OOD collisions collapse from $\sim$300/500 to \textbf{$\sim$23--28/500}, a $>$10$\times$
+OOD N$\to$N delivery more than doubles, indicating a general improvement from multi-layout training. More remarkably,
+OOD collisions collapse from $\sim$300/500 to $\sim$28/500, a $>$10$\times$
 reduction. The mechanism is generalizable obstacle avoidance: with 10 diverse shelf
 configurations, the Q-table learns movement strategies that transfer to novel
 obstacle arrangements.
 
 The improvement holds for both training protocols in absolute terms. With a deterministic adversary OOD A$\to$N rises
-from 151.8 (Exp~1) to 213.0 (Exp~14, note also had more training time) and for a learned adversary from 89.6 (Exp~9) to 214.6 (Exp~15)- more than double.
-Nature-trained and adversary-trained agents converge on roughly the same OOD delivery level once the layout distribution is diverse enough to force generalized navigation. The difference is more significant for a learned adversary policy since it had not yet experienced the same quality of state-space coverage gains that deterministic had for its baseline run.
-This is the most practically significant finding in this section: multi-layout training lifts absolute performance across the board, not merely for one protocol.
+from 151.8 (Exp~1) to 213.0 (Exp~14, which also had more training time), and for a learned adversary it rises from 91.8 (Exp~9) to 219.2 (Exp~15), more than double.
+Nature-trained and adversary-trained agents converge on roughly the same OOD delivery level once the layout distribution is diverse enough to force generalized navigation.
+This is the most practically significant finding in this section. Multi-layout training lifts absolute performance across the board, not merely for one protocol.
 
-\textbf{Adversary training and type seems irrelevant.} Deterministic (213) and learned (214.6)
-multi-layout variants differ by less than 1\% in OOD A$\to$N delivery.  Furthermore, the performance of the nature trained policies on the nature setting are just as strong if not stronger than the adversarially trained policies. Both of these facts again evidence that strong state space coverage is incredibly important for creating a successful delivery policy. Previously the deterministic adversary had been so much stronger than the nature policy due to it forcing the delivery agent to have more interactions with the adversary during training. With these new experiments, all policies are experiencing those same effects and are converging to more similar results. The ratios both fall near 1.00.
+\textbf{Adversary training and type become far less important.} Deterministic
+(213.0) and learned (219.2) multi-layout variants differ by only a few percent
+in OOD A$\to$N delivery, and both show near-parity ratios. This again indicates
+that under multi-layout training, state-space coverage appears to be the
+dominant variable in delivery performance, with adversary-type differences
+becoming much smaller than in the single-layout setting.
 
-\textbf{ID tradeoff.} ID delivery degrades from $\sim$49/50 to $\sim$42--43/50. Agents
+\textbf{ID tradeoff.} ID delivery degrades slightly from $\sim$49--50/50 to roughly
+$40$--$45/50$. Agents
 trained on 10 layouts spread their Q-table visits across more shelf configurations
 and do not optimize as sharply for the single evaluation layout.
 
 \textbf{Verdict: dominant OOD result.} Multi-layout training is the most effective
 intervention tested, and it does so without any state space expansion.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Experiments 16--17: Coarse Direction Combined with Multi-Layout}
-
-\textbf{Design.} Combine both coarse direction from experiments 12 and 13 and multi-layout training from experiments 14 and 15. State space: 151,875. The hypothesis is a potential additive benefit from both layout
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\textbf{Design.} Combine coarse direction from Experiments~12--13 with multi-layout training from Experiments~14--15. The state space is 151,875. The hypothesis is a potential additive benefit from both layout
 diversity for obstacle avoidance and direction features for navigation.
 
-\textbf{Results.} The OOD N$\to$N delivery mean is \textbf{183.0}. This is greater than coarse direction alone (115.8), but substantially below multi-layout alone (214.8). OOD collision counts average $\sim$314 (Exp~16) and $\sim$318 (Exp~17) which is far above
-Exps~14--15's $\sim$22 and approaching Exps~12--13's $\sim$386. The
+\textbf{Results.} The OOD N$\to$N delivery mean is 183.0. This is greater than coarse direction alone (115.8), but substantially below multi-layout alone (214.8). OOD collision counts average roughly $\sim$314 in both variants, which is far above
+Exps~14--15's $\sim$28 and approaching Exps~12--13's $\sim$381. The
 A$\to$N/N$\to$N ratio is near one for both protocols, 0.95$\times$ (Exp~16) and
-0.96$\times$ (Exp~17), consistent with Exps~14--15. In absolute terms, A$\to$N rises from 151.8 to 173.4 (Exp~16) and from 89.6 to 172.0 (Exp~17). Again it seems that adversary type does not make a significant difference, and adversarial training in general does not meaningfully improve generalization. 
+0.95$\times$ (Exp~17), consistent with Exps~14--15. In absolute terms, A$\to$N rises from 151.8 to 173.4 (Exp~16) and from 91.8 to 173.2 (Exp~17). Again, it seems that adversary type does not make a significant difference, and adversarial training in general does not meaningfully improve generalization. 
 
 \begin{table}[H]
 \caption{Collision comparison across state-representation interventions.}
@@ -711,9 +831,9 @@ A$\to$N/N$\to$N ratio is near one for both protocols, 0.95$\times$ (Exp~16) and
 \textbf{Experiment} & \textbf{OOD N$\to$N Coll (avg)} & \textbf{OOD N$\to$N Del (avg)} \\
 \midrule
 Exp~1 (Det.\ baseline, 6 seeds)    & $\sim$340 & 78.5 \\
-Exp~9 (Learned baseline, 5 seeds) & $\sim$300 & 95.8 \\
+Exp~9 (Learned baseline, 5 seeds) & $\sim$305 & 96.4 \\
 Exps~12--13 (coarse dir.)         & $\sim$386 & 116  \\
-Exps~14--15 (multi-layout)        & $\sim$22  & 211  \\
+Exps~14--15 (multi-layout)        & $\sim$28  & 231  \\
 Exps~16--17 (combined)            & $\sim$316 & 181  \\
 \bottomrule
 \end{tabular}
@@ -730,11 +850,13 @@ expands the table 81$\times$ to encode navigational direction. In combination, t
 work. OOD collision rates return to Exps~12--13 levels, confirming that the 10-layout
 curriculum can no longer cover the expanded space. State enrichment and state coverage pose a tradeoff in tabular Q-learning.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Experiments 18--19: Adversary Freeze Schedule}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{sec:freeze}
 
-A natural hypothesis for the learned adversary's failure is co-learning
-\emph{non-stationarity}: because both agents update simultaneously, the delivery
+A natural hypothesis for the learned adversary's lack of effectiveness is co-learning
+non-stationarity. Because both agents update simultaneously, the delivery
 agent never stabilizes against a consistent training pressure. We tested this by
 freezing the learned adversary's Q-table at episode 10k, letting the delivery agent
 train against a static policy for the remaining 30k episodes (Exp~18). We also
@@ -745,30 +867,39 @@ combined a freeze at episode 20k with multi-layout training (Exp~19).
 \label{tab:freeze}
 \centering
 \footnotesize
-\begin{tabular}{lrrrr}
+\begin{tabular}{lrrr}
 \toprule
-\textbf{Config} & \textbf{N$\to$N} & \textbf{A$\to$N} & \textbf{Ratio} & \textbf{OOD Coll} \\
+\textbf{Config} & \textbf{N$\to$N} & \textbf{A$\to$N} & \textbf{Ratio} \\
 \midrule
-Exp~9: co-evolving (5-seed)  & 95.8  & 89.6  & 0.93$\times$ & $\sim$310 \\
-Exp~18: freeze@10k (single)  & 90.5  & 90.5  & \textbf{1.00$\times$} & $\sim$310 \\
-Exp~15: multi (no freeze)    & 214.8 & 214.6 & 1.00$\times$ & $\sim$23  \\
-Exp~19: multi + freeze@20k   & 218.3 & 224.0 & \textbf{1.03$\times$} & $\sim$23  \\
-Exp~1: deterministic (ref.)  & 78.5  & 151.8 & \textbf{1.93$\times$} & $\sim$291 \\
+Exp~9: co-evolving (single-layout)   & 96.4  & 91.8  & 0.95$\times$ \\
+Exp~18: freeze@10k (single-layout)  & 104.0  & 100.5  & 0.97$\times$ \\
+Exp~15: multi-layout (no freeze)    & 230.8 & 219.2 & 0.95$\times$ \\
+Exp~19: multi-layout + freeze@20k   & 234.0 & 208.8 & 0.89$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Findings.} Freezing the adversary raises the single-layout ratio from
-$0.93\times$ to $\mathbf{1.00\times}$, though this is insignificant since the result came from natural variance in \textbf{N$\to$N} runs. In absolute terms, Exp~18 produces only very minor improvement. The number of OOD A$\to$N deliveries increases from 89.6 to 90.5. 
+$0.95\times$ to $0.97\times$, but this is not evidence of a learned adversary
+benefit: both N$\to$N and A$\to$N rise slightly, and the ratio remains near
+parity. In absolute terms, Exp~18 produces only a modest change, with OOD
+A$\to$N deliveries increasing from 91.8 to 100.5. 
 
-Multi-layout + freeze (Exp~19) also only experiences a minor improvement in packages delivered by the learned-adversary trained agent (from 214.6 to 224.0).
+Multi-layout + freeze (Exp~19) does not help. Relative to plain learned
+multi-layout training (Exp~15), OOD A$\to$N actually falls from 219.2 to 208.8,
+while N$\to$N rises slightly from 230.8 to 234.0.
 
-\textbf{Interpretation.} Implementing a freeze to stabilize training against a learned adversary is beneficial, though the improvement is still dwarfed by the gains from multi-layout training. This experiment demonstrates that training against a learned adversary has only a minor positive OOD performance effects if any when compared to training on the natural environment. 
+\textbf{Interpretation.} Stabilizing the learned adversary with a freeze does not
+recover a deterministic-style OOD advantage. Single-layout freeze remains near
+parity, and multi-layout + freeze slightly underperforms plain multi-layout on
+the adversary-trained policy. The dominant effect is still layout diversity, not
+learned adversary stabilization.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Cross-Experiment Summary (Experiments 10--19)}
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{table}[H]
-\caption{Summary of state representation, curriculum, and freeze interventions (OOD N$\to$N and A$\to$N averaged across deterministic and learned adversary variants since they proved to very similar).}
+\caption{Summary of state representation, curriculum, and freeze interventions. When a row combines deterministic and learned variants, the reported OOD N$\to$N and A$\to$N values are simple averages of the corresponding variant means.}
 \label{tab:cross-option}
 \centering
 \footnotesize
@@ -777,41 +908,56 @@ Multi-layout + freeze (Exp~19) also only experiences a minor improvement in pack
 \textbf{Experiment} & \textbf{States} & \textbf{OOD N$\to$N} & \textbf{OOD A$\to$N} & \textbf{Ratio} \\
 \midrule
 \textbf{Det.\ baseline (Exp~1)}    & 1,875   & \textbf{78.5}  & \textbf{151.8} & \textbf{1.93$\times$} \\
-Learned baseline (Exp~9)           & 1,875   & 95.8           & 89.6           & 0.93$\times$ \\
-Exps~10--11: proximity             & 375     & 52             & 58             & 1.12$\times$ \\
-Exps~12--13: coarse dir.           & 151,875 & 116            & 120            & 1.03$\times$ \\
-\textbf{Exps~14--15: multi-layout} & \textbf{1,875} & \textbf{211} & \textbf{209} & 0.99$\times$ \\
+Learned baseline (Exp~9)           & 1,875   & 96.4           & 91.8           & 0.95$\times$ \\
+Exps~10--11: proximity             & 375     & 48             & 81             & 1.68$\times$ \\
+Exps~12--13: coarse dir.           & 151,875 & 116            & 119            & 1.03$\times$ \\
+\textbf{Exps~14--15: multi-layout} & \textbf{1,875} & \textbf{231} & \textbf{216} & 0.94$\times$ \\
 Exps~16--17: coarse + multi        & 151,875 & 181            & 173            & 0.96$\times$ \\
-Exp~18: single + freeze@10k        & 1,875   & 90.5           & 90.5           & 1.00$\times$ \\
-Exp~19: multi + freeze@20k         & 1,875   & 218            & 224            & 1.03$\times$ \\
+Exp~18: single + freeze@10k        & 1,875   & 104.0           & 100.5           & 0.97$\times$ \\
+Exp~19: multi + freeze@20k         & 1,875   & 234            & 209            & 0.89$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Across Experiments 12--17, the delievery counts for the different adversary type (deterministic vs.\ learned) began to converge (within ~5\%). Additionally, the performance of the adversarially trained policies and natural trained policies on the natural environment increasingly converged. This  indicates that state space coverage is the dominant variable in delivery performance. Experiments 10--11 however did show that decreasing the state space too much (and losing information about the adversaries position) can have very negative consequences as well. 
+Across Experiments 12--17, the delivery counts for the different adversary types
+(deterministic vs.\ learned) increasingly converge. This indicates that state-space coverage is the dominant
+variable in delivery performance. Experiments~10--11 are the clearest exception:
+shrinking the state space too aggressively by removing too much positional
+information can be just as harmful as expanding it too far. 
 
-Finally, experiments 18 and 19 attempted to combine the hypothetical benefit of training against a learned adversary with the benefit of training stability by implementing a freezing policy. Experiment 19, which combined multi-layout training (the most successful change across all experiments) with learned adversary freezing, was the most successful. Though the difference is not significant, it does achieve the highest OOD OOD N$\to$N and OOD A$\to$N delivery counts and a ratio greater than 1 (which no other experiment achieved without introducing other harmful effects on absolute package delivery).
+Finally, Experiments~18 and~19 attempted to combine the hypothetical benefit of
+training against a learned adversary with the benefit of training stability by
+implementing a freezing policy. The refreshed results do not support that
+strategy. Freeze@10k remains near parity in the single-layout setting, and
+multi-layout + freeze@20k underperforms plain learned multi-layout training on
+OOD A$\to$N. Freezing therefore does not add a meaningful learned adversary
+benefit once the main state-coverage effects are accounted for.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Boundary Conditions of the OOD Benefit}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{sec:boundary}
 
-We know that with single-layout training the deterministic adversary provides a 1.93$\times$ OOD delivery
-advantage in the scenario of single-agent, single-package, single-shelf, single training layout, 5$\times$5 setting. When we added in multi-layout training, that ratio dropped to essentially 1.
+For this section, the relevant baseline is the corresponding multi-layout result. In the base single-agent,
+single-package, single-shelf, 5$\times$5 setting with multi-layout training
+(Exp~14), deterministic adversary training does not outperform nature training
+on OOD layouts (213.0 vs.\ 230.8 deliveries, $0.92\times$).
 
-We now probe whether the ratio remains near-one when we extend to more complex configurations.
+We now probe whether modifying task scale or topology causes deterministic adversary
+OOD benefit to emerge, remain near parity, or further decline under that multi-layout regime.
 We ran five experiments that vary one dimension at a time: task complexity (2~packages),
 cooperative multi-agent (2~delivery agents), static obstacle density (2~shelves),
 adversary count (2~deterministic pursuers), and the interaction of grid size with obstacle density (7$\times$7 with 2~shelves).
 
 All five experiments apply the same best practices established in
-Section~\ref{sec:state}: multi-layout training (10~training layouts),
+Section~\ref{sec:stateexp}: multi-layout training (10~training layouts),
 distance shaping (scale 1.0), 40{,}000 training episodes, 10~OOD layouts,
 and 5~seeds.
 
-Two new environment parameters were implemented: \texttt{shelf\_count} (multiple
+Two new environment parameters were implemented: \codepath{shelf_count} (multiple
 non-overlapping shelf obstacles; static — not encoded in state) and
-\texttt{adversary\_count} (multiple deterministic pursuers; state encodes
+\codepath{adversary_count} (multiple deterministic pursuers; state encodes
 the nearest pursuer's position, preserving the 1{,}875-state space).
 
 \begin{table}[H]
@@ -834,56 +980,73 @@ Exp~24: 7$\times$7 + 2 shelves  & 7,203  & 83.2  & 104.8 & \textbf{1.26$\times$}
 \end{tabular}
 \end{table}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{2 Packages (Experiment 20)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Adding a second package raises state space to 5{,}625 states ($3^2$ package
-states). The OOD ratio is $\mathbf{1.81\times}$, a strong benefit (5/5 seeds
+states). The OOD ratio is $1.81\times$, a strong benefit (5/5 seeds
 positive, N$\to$N: 188.0, A$\to$N: 340.8). Adversary training substantially
-improves OOD delivery on the two-package task. The pursuer's consistent pressure diversifies the agent's positional coverage during training, and this benefit transfers to the longer sequential pickup and delivery process.
+improves OOD delivery on the two-package task. Relative to the multi-layout
+baseline from Exp~14 ($0.92\times$), this is a clear re-emergence of an OOD
+advantage under a harder task. This is consistent with the coverage-diversification mechanism still helping when the task
+becomes a longer sequential pickup-and-delivery problem. It is also consistent with deterministic adversary training being most beneficial when state space coverage is naturally lower, without state space exploding, and the adversary forces the agent into more evasion scenarios.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{2 Delivery Agents (Experiment 21)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Two cooperative agents sharing a joint Q-table ($4^2 = 16$ joint actions,
-62{,}500 states) produce a $0.89\times$ OOD ratio. 
-The joint Q-table over two agents' positions has 62{,}500 states, which cannot be
-adequately covered in 40{,}000 training episodes. Coverage collapse means both the
-nature-trained and adversary-trained policies encounter states with near-zero
-visitation counts on OOD layouts, eliminating any generalization advantage that
-adversary training might otherwise develop. Again, state coverage is the binding constraint here, not layout diversity.
-
-
+62{,}500 states) produce a $0.89\times$ OOD ratio. The enlarged joint
+state-action space is too large to cover well in 40{,}000 training episodes,
+and relative to the Exp~14 multi-layout baseline ($0.92\times$), this is a slight further decline.
+The result is therefore consistent with a training-budget limitation rather
+than with any special failure of deterministic adversary training itself.
+Again, the binding constraint appears to be state coverage, not layout
+diversity.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{2 Static Shelves, 5$\times$5 (Experiment 22)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Two shelves on 5$\times$5 keep the state space at 1{,}875 (shelves not encoded),
 and the OOD ratio is $1.07\times$ (3/5 seeds positive, N$\to$N: 156.2, A$\to$N:
-167.8). Adding a second shelf increases obstacle density on an already small grid. Though it is possible the adversary-trained
-agent can learn to use specific shelf arrangements as physical barriers against the
-pursuer on such a dense map, multi-layout training across varied shelf placements is sufficient to prevent
-overfitting to any single layout, and the adversary-trained agent retains a modest
-OOD advantage. Note: seed 42 produced a degenerate in-distribution layout with
-zero deliveries for all policies; OOD metrics from that seed remain valid and are
+167.8). This is only a weak positive result: the mean is above 1, but the seed
+pattern is mixed and the effect is modest. Relative to the Exp~14 multi-layout
+baseline ($0.92\times$), this is a small positive shift rather than strong
+evidence of a robust benefit. Denser static obstacles on a small grid can move deterministic adversary
+training slightly above parity, but not by much. It seems the potential for a
+dense layout to force more layout-specific and less generalizable evasion tactics was not fully realized.
+One caveat is that seed 42 produced a degenerate in-distribution layout with
+zero deliveries for all policies. OOD metrics from that seed remain valid and are
 included in the reported means.
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{2 Deterministic Adversaries (Experiment 23)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Doubling adversary count (nearest pursuer encoded; 1{,}875 states unchanged)
 produces a $1.06\times$ ratio (3/5 seeds positive, 2/5 negative). Doubling the
-pursuer count does not eliminate the OOD benefit, but it does increase variance.
-Two simultaneous pursuers impose stronger training pressure, and whether that
-pressure translates to broader state coverage or overfitting to specific evasion patterns varies by seed. The near-one mean ratio suggests that multi-layout training
-absorbs the additional difficulty without a systematic gain or loss.
+pursuer count provides a slight OOD advantage for the adversarially trained policy, but not in a major or definitive way. 
+The mixed seed outcomes indicate that stronger pursuit
+pressure is not, by itself, enough to create a large generalization advantage
+once multi-layout training is already providing broad coverage. Relative to the
+Exp~14 multi-layout baseline ($0.92\times$), this is again only a small shift
+into positive territory. 
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{7$\times$7 + 2 Shelves (Experiment 24)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 On the 7$\times$7 grid with 2 shelves, the OOD ratio is $1.26\times$, a moderate
 benefit (4/5 seeds positive, N$\to$N: 83.2, A$\to$N: 104.8). The benefit is stronger
 than on the smaller grid (Exp~22: $1.07\times$ on 5$\times$5).
 
 \begin{table}[H]
-\caption{7$\times$7 OOD performance: single shelf (Exp~3) vs.\ two shelves (Exp~24,
-         multi-layout training). The adversary training benefit is preserved despite
-         added obstacles.}
+\caption{7$\times$7 OOD performance for reference: single-shelf Exp~3 (single-layout training) 
+vs.\ two-shelf Exp~24 (multi-layout training).
+         This is not a clean shelf-only ablation, but it shows that the OOD
+         advantage remains positive in the larger, denser setting.}
 \label{tab:7x7-comparison}
 \centering
 \footnotesize
@@ -897,154 +1060,169 @@ Exp~24 (multi-layout)       & 2 & 83.2 & 104.8 & 1.26$\times$ \\
 \end{tabular}
 \end{table}
 
-On the 7$\times$7 grid, the additional shelf does not produce topology-exploiting
-strategies: the grid is spacious enough that adversary training still forces diverse
-positional coverage, and the larger navigation space means that no particular
-2-shelf arrangement creates bottlenecks that uniquely block the pursuer.
-Multi-layout training is important here so that the agent encounters 2-shelf configurations
-in many orientations during training, reducing reliance on any single topology. It is understandable that the magnitude of the ratio decreases from experiment 3 since the state space was made larger and the task was made more difficult, and it is mostly notable that the adversarially trained policy maintained an advantage in the OOD nature scenario. 
-
-\subsection{Summary: The Role of Topology and Scale}
-
-The boundary of the OOD benefit is not determined by added complexity in general.
-Across varied configurations — more packages, more shelves, more adversaries, larger
-grids — the adversary training advantage largely persists. The critical exception is
-state space explosion: when joint state coverage collapses, the training signal
-degrades for both policies equally. Table~\ref{tab:boundary} shows four regimes:
-
-\textbf{Strong benefit (Exp~20: $1.81\times$, 5/5 seeds):} Adding a second
-package strengthens the adversary training advantage. The pursuer's positional
-pressure transfers to the longer sequential delivery chain.
-
-\textbf{Reversal (Exp~21: $0.89\times$, 1/5 seeds):} Two cooperative agents expand
-the state space to 62{,}500 — beyond the coverage capacity of 40{,}000 training
-episodes. Both policies operate near-randomly on unseen OOD joint states, eliminating
-the advantage.
-
-\textbf{Moderate benefit (Exp~24: $1.26\times$, 4/5 seeds):} The 7$\times$7 grid
-with 2 shelves preserves a meaningful OOD advantage. The larger grid provides enough
-navigable space that adversary training still produces generalizable positional
-diversity.
-
-\textbf{Near-neutral (Exps~22, 23):} Two shelves on 5$\times$5 ($1.07\times$, 3/5
-seeds) and two adversaries ($1.06\times$, 3/5 seeds) both produce slight, inconsistent
-benefits. Neither configuration clearly helps or hurts.
-
-The key variable governing failure is state space size relative to training budget.
-Exp~21's 62{,}500-state joint space is the only configuration where coverage collapses
-entirely. The obstacle density result (Exps~22 vs~24) shows that larger grids
-preserve the benefit under added obstacles.
+On the 7$\times$7 grid, adding a second shelf does not erase the OOD advantage:
+the adversary-trained policy still outperforms the nature-trained policy in 4 of
+5 seeds and in the mean. The comparison to Exp~22 suggests that denser
+obstacles are less damaging when the grid has more navigable space, though this
+is only suggestive because grid size, state space, and training setup also
+differ across the two experiments. The main takeaway is simply that the
+adversarial advantage emerges again in this larger, denser setting even
+though its magnitude is much smaller than the single-layout 7$\times$7 baseline
+from Exp~3.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Summary: The Role of Topology and Scale}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The boundary of the OOD benefit is not determined by added complexity in
+general. Starting from the multi-layout baseline in Exp~14 ($0.92\times$),
+some harder settings push deterministic adversary training back above parity, though for several only weakly.
+The clearest exception is state-space explosion. When joint state coverage collapses, even a modest
+benefit fails to emerge. Table~\ref{tab:boundary} shows four main outcomes.
+
+\textbf{Strong emergence (Exp~20: $1.81\times$, 5/5 seeds):} Adding a second
+package moves deterministic adversary training far above the multi-layout
+baseline and produces the clearest renewed OOD advantage in this section.
+
+\textbf{Continued non-benefit (Exp~21: $0.89\times$, 1/5 seeds):} Two
+cooperative agents expand the state space to 62{,}500, beyond the apparent
+coverage capacity of 40{,}000 training episodes. This is another case
+where training budget appears to become the limiting factor.
+
+\textbf{Moderate emergence (Exp~24: $1.26\times$, 4/5 seeds):} The 7$\times$7 grid with
+2 shelves produces a meaningful OOD advantage. Relative to Exp~22, this
+suggests that added obstacles are less damaging when the environment has more
+space, though that comparison is not a single-factor ablation.
+
+\textbf{Weak emergence / near-neutral (Exps~22, 23):} Two shelves on 5$\times$5
+($1.07\times$) and two adversaries ($1.06\times$) both move above the Exp~14
+baseline, but only slightly and inconsistently. These results are better read
+as small positive shifts than as evidence of a strong positive effect.
+
+The key variable governing failure is state space size relative to training
+budget. Exp~21's 62{,}500-state joint space is the only configuration where the
+deterministic adversary still fails to reach parity. Exps~22 and 24 further
+suggest that obstacle density is more damaging on cramped grids than on larger
+ones, but that topology claim should be read cautiously because multiple
+factors change together. Overall, OOD benefits of deterministic adversary
+training do re-emerge when the training task becomes more difficult in some
+ways, but only when that added difficulty does not simultaneously destroy state
+space coverage.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Discussion}
 \label{sec:discussion}
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Why Does the Deterministic Adversary Help OOD?}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 The deterministic pursuer forces the delivery agent to explore a wide range of
-positional combinations during training on a single layout: the agent must navigate
+positional combinations during training on a single layout. The agent must navigate
 around a pursuer that relentlessly approaches from all relative positions. This
 diversifies the Q-table entries visited during training, effectively broadening the
 set of positions the agent has encountered. When an OOD layout presents new shelf
 configurations, the agent is more likely to have seen analogous positional
 relationships.
 
-Option~D confirms this interpretation directly: explicit layout diversity achieves
-the same effect — and makes adversary type irrelevant. Once the training curriculum
-covers enough positional diversity (either through an active pursuer or through
-10 training layouts), OOD robustness follows. The adversary in Experiments~1--3
-is functioning as a curriculum diversifier, not as a strategic opponent that teaches
-specific evasion strategies.
+Multi-layout training (Exps~14--15) supports part of this interpretation directly:
+explicit layout diversity produces the same broad OOD improvement for both
+adversary types and greatly narrows the gap between them.
+Once the training curriculum covers enough positional diversity (either through an
+active pursuer or through multi-layout training) without exploding the state
+space, OOD robustness becomes much more likely. The adversary
+in Experiments~1--3 is functioning more as a curriculum diversifier than a strategic
+opponent that teaches specific evasion strategies.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Why Doesn't the Learned Adversary Help?}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-The learned adversary is harder than the deterministic one at training time — ID-A
-results confirm this. But harder training does not produce better OOD transfer in
-this case. The likely mechanism is co-learning non-stationarity: because both the
+The learned adversary applies a less stable training signal than the deterministic one. But this does not produce better OOD transfer in this case. The likely mechanism is co-learning non-stationarity. Because both the
 delivery agent and the adversary are updating simultaneously, neither converges to
 a stable policy. The delivery agent never develops consistent evasion strategies
-that generalize; it instead adapts to a moving target. The Q-table entries updated
+that generalize and instead adapts to a moving target. The Q-table entries updated
 in any given training phase are later overwritten as the adversary changes its
 pursuit pattern. The result is a policy shaped by the specific co-evolutionary
 trajectory of this training run, not a general-purpose obstacle-avoidance strategy.
 
 This is consistent with known co-learning failure modes in two-player tabular
-settings and suggests that a stable, consistent training pressure — as provided by
-the deterministic pursuer from episode one — is an important condition for the OOD
+settings and suggests that a stable, consistent training pressure as seen with the deterministic pursuer from episode one is an important condition for the OOD
 benefit observed in Experiments~1--3.
 
 Our freeze experiments (Exps~18--19) allow us to decompose this failure. When the
-learned adversary is frozen at episode 10{,}000 — halting Q-updates and locking
-epsilon to 0.05 so it acts near-greedily on its current policy — the OOD ratio
-rises from $0.93\times$ to $1.00\times$. Non-stationarity is therefore a real but
-\emph{minor} contributor: eliminating it recovers parity with nature but does not
-approach the $1.93\times$ advantage of the deterministic pursuer. The remaining
-gap ($1.00\times$ vs.\ $1.93\times$) reflects a difference in pursuit quality.
-The deterministic pursuer executes a high-quality, consistent chase strategy from
+learned adversary is frozen at episode 10{,}000 to halt Q-updates and lock 
+epsilon to 0.05, it acts near-greedily on its current policy. The OOD ratio
+rises only from $0.95\times$ (Exp~9) to $0.97\times$ (Exp~18), with OOD A$\to$N
+deliveries increasing from 91.8 to 100.5 while OOD N$\to$N also rises from 96.4
+to 104.0. Non-stationarity is therefore at most a minor contributor.
+In this single-layout comparison, eliminating ongoing co-learning does not
+create a meaningful OOD advantage and does not approach the $1.93\times$
+advantage of the deterministic pursuer in Experiment~1. The remaining gap
+($0.97\times$ vs.\ $1.93\times$) points more to a difference in pursuit
+quality than to non-stationarity alone. The deterministic
+pursuer executes a high quality, consistent chase strategy from
 episode one, diversifying the delivery agent's Q-table from the very start of
 training. A learned adversary, even once frozen, was shaped during early co-learning
-when its own policy was weak and exploratory; the Q-table entries accumulated during
-that period are qualitatively different from those accumulated under relentless,
+when its own policy was weak and exploratory. The Q-table entries accumulated during
+that period are qualitatively different from those accumulated under consistent,
 competent pursuit.
 
-Multi-layout training with a frozen adversary (Exp~19) confirms this interpretation:
-the OOD delivery ratio reaches $1.03\times$, which is statistically indistinguishable
-from multi-layout alone (Exp~15: $0.96\times$; same absolute delivery counts). The
-freeze provides no additional benefit once layout diversity is the primary source of
-Q-table coverage. Together, these results point to two necessary conditions for the
+Multi-layout training with a frozen adversary (Exp~19) confirms this interpretation with
+the opposite pattern: the OOD delivery ratio falls from $0.95\times$ in Exp~15 to
+$0.89\times$ in Exp~19, with A$\to$N deliveries dropping from 219.2 to 208.8. Once layout 
+diversity is the
+primary source of Q-table coverage, freezing the learned adversary provides no
+additional help and may slightly hurt by locking in a policy that is still not a
+useful training curriculum. Together, these results point to two ideal conditions for the
 OOD advantage observed with the deterministic adversary: (a)~a stable adversary
 policy throughout training so that Q-table updates do not cancel across phases, and
 (b)~a high-quality pursuit strategy from the first episode so that the delivery agent
-accumulates useful, generalizable positional experience from the outset. A learned
-adversary satisfies neither condition during early training, and satisfying condition
-(a) alone via late-stage freezing is insufficient to close the gap.
+accumulates useful, generalizable positional experience from the outset. 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{State Coverage as the Binding Constraint}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 The most general lesson from our experiments is that OOD robustness in tabular
 Q-learning is a coverage problem. The policy can only do better than random in OOD
 states that it has encountered (or that share Q-table entries with encountered states).
-Any design choice that increases coverage — whether an active pursuer, multi-layout
-training, or a compact state encoding — improves OOD performance. Any choice that
-expands the state space beyond what the training budget can cover hurts OOD
-performance, regardless of the feature's navigational value (as Option~C+D demonstrates).
+Design choices that increase useful coverage within a sufficiently informative
+state representation often improve OOD performance. Conversely, choices that
+expand the state space beyond what the training budget can cover tend to hurt OOD
+performance, even when the added feature is intuitively helpful for navigation
+(as Exps~16--17 demonstrate).
 
-This framing has a practical implication: for deployment in environments with diverse
-layouts, multi-layout training with a small, fully-coverable state space (Option~D)
-is more effective than trying to encode more information about the environment
-(Option~C). The two are in tension in the tabular regime, and coverage wins.
+The practical implication of this is that for deployment in environments with diverse
+layouts, multi-layout training with a small, fully-coverable state space (Exps~14--15)
+is more effective than trying to encode extra information about the environment
+(Exps~12--13). The two are in tension, and coverage often seems more important. Exps~10--11 show there is a limit, though, because they remove too much information about adversary location in an effort to decrease state space.
 
 The boundary condition experiments (Section~\ref{sec:boundary}) deepen this picture.
-The deterministic adversary's coverage benefit is not just a function of state space
-size — it is also a function of whether the accumulated Q-table entries are
-\emph{general} or \emph{topology-specific}. Dense static obstacles on small grids
-force the agent to learn shelf-exploitation strategies during adversary training
-(using specific shelf arrangements as pursuit barriers). These entries are
-OOD-fragile because OOD layouts present different shelf arrangements. On larger
-grids, the same number of obstacles leaves enough navigable space that adversary
-training still produces general positional diversity. Coverage of the \emph{right}
-states matters as much as coverage quantity: the key question is whether the
-adversary-induced Q-table entries transfer to novel layouts or are bound to the
-training layout's topology.
+For added packages (Exp~20: $1.81\times$), added
+shelves (Exp~22: $1.07\times$; Exp~24: $1.26\times$), and added adversaries (Exp~23:
+$1.06\times$) deterministic adversary training moves back above the multi-layout
+baseline from Exp~14 ($0.92\times$), though only Exp~20 and Exp~24 do so by a
+clearly meaningful margin. Exp~21 (two cooperative agents) instead remains below
+parity at $0.89\times$, where the 62{,}500-state joint space appears to exceed
+coverage capacity regardless of adversary type. Grid size also affects the strength of
+the benefit under added obstacles. The 7$\times$7 grid with 2 shelves yields
+$1.26\times$ versus $1.07\times$ on the 5$\times$5 grid with the same obstacle
+count, consistent with the idea that the larger grid provides more navigable
+space for adversary-induced positional diversity, though isn't a clean one-factor comparison.
+The results point to the fact that adversarial training could provide a meaningful OOD
+benefit in more complicated environments as long as state space is kept in check.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Limitations}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\textbf{No formal statistical tests.} We report effect sizes and seed counts; we do
-not report p-values or confidence intervals. The headline results (deterministic
-adversary OOD advantage, multi-layout gain) involve large enough effects and enough
-seeds that the directional finding is robust; the moderate-effect results
-(Option~C's +21--22\%) have less statistical support.
-
-\textbf{Seed counts vary across experiments.} Exps~9--17 use 5 seeds each; the deterministic adversary seed sweep (Exp~1) uses 6; the boundary
-condition experiments (Exps~20--24) use 5 seeds each. Exp~22 (2 shelves, 5$\times$5)
-includes all 5 seeds in the OOD metrics reported here, but seed~42's in-distribution
-training layout is structurally degenerate — the package source or destination is
-inaccessible under the 2-shelf configuration, so neither policy delivers a single
-package in-distribution for that seed. The OOD layouts do not share this property
-and the OOD metrics are valid.
-The boundary condition results are directional — 5 seeds is sufficient to establish
-consistent sign and approximate magnitude, though effect sizes should be treated as
-estimates.
+\textbf{No formal statistical tests.} We report effect sizes and seed counts and
+not p-values or confidence intervals. Some of the major results (deterministic
+adversary OOD advantage, multi-layout gain) involve large enough effects and several
+seeds such that the directional finding is robust. The moderate-effect results
+have less statistical support.
 
 \textbf{Partial Q-table validity in Exps~1--3.} With 33--51\% nonzero hit rates
 on OOD state lookups, some OOD states fall back to random actions. The directional
@@ -1057,57 +1235,84 @@ tabular methods. Function approximation (e.g., neural network Q-learning) genera
 across states by design, which would change the dynamic of both the OOD robustness
 benefit and the state space expansion tradeoffs.
 
+\textbf{Adversary comparison is not a pure predictability-only ablation.} The
+deterministic pursuer and learned adversary differ not only in predictability,
+but also in policy quality, optimization stability, and whether the opponent is
+co-evolving during training. The results therefore support an empirical claim
+about which adversary design transfers better in this tabular setting, but do
+not isolate predictability as the only causal factor.
+
 \textbf{Single task and layout family.} All experiments use the same pickup-and-delivery
 task and the same layout generation procedure. Results may not generalize to
 warehouse environments with qualitatively different structure (e.g., long corridors,
 multi-floor navigation, multi-agent coordination).
 
+\textbf{OOD layouts come from one generator family.} The out-of-distribution
+evaluations use unseen layouts, but those layouts are still sampled from the
+same procedural generation family used throughout the project. The paper
+therefore demonstrates robustness to unseen layouts within that family rather
+than to arbitrary warehouse topologies or broader real-world domain shift.
+
+\textbf{Limited training budget.} The majority of our experiments trained for 40k episodes. Considering that state space coverage was the most crucial factor in policy success, additional experiments with larger budgets should be conducted.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 We set out to test whether adversarial Q-learning produces better OOD
-generalization in a gridworld warehouse. The answer is: \emph{it depends on what
-kind of adversary}.
+generalization in a gridworld warehouse. The answer is that it depends on what
+kind of adversary and on the training regime.
 
-Training against a \textbf{deterministic pursuer} consistently improves OOD delivery
-by $1.89\times$--$3.01\times$ across 16 seeds and two grid sizes, with no reversals.
-The advantage grows with environment size (1.93$\times$ at 5$\times$5, 3.01$\times$
-at 7$\times$7) and manifests in both delivery count and collision avoidance. This is
+When training on a single layout against a deterministic pursuer, OOD delivery is consistently improved
+by $1.89\times$--$3.01\times$ across 16 seeded runs and two grid sizes, with no reversals.
+The advantage is larger on the 7$\times$7 protocol than on the 5$\times$5
+protocols (1.89$\times$--1.93$\times$ at 5$\times$5, 3.01$\times$ at 7$\times$7),
+though those experiments also differ in training budget and OOD evaluation volume.
+It manifests in both delivery count and collision avoidance. This is
 the paper's strongest and most reliable result.
 
-Training against a \textbf{learned adversary} provides no OOD benefit — and a mild
-disadvantage (0.93$\times$, confirmed under carefully controlled conditions after
-correcting a state space coverage bug that invalidated earlier measurements). The
-paper's methodological audit section demonstrates how tabular RL OOD evaluations
+Training against a learned adversary provides little to no OOD benefit, and at times a mild
+disadvantage (0.95$\times$ in the first valid single-layout measurement, Exp~9). The
+paper's audit section on experiments 4--8 demonstrates how tabular RL OOD evaluations
 can silently degrade into random-walk artifacts when state space size exceeds
-training coverage, and provides a verification protocol for future work.
+training coverage.
 
-The \textbf{underlying mechanism} is state coverage, not adversary type. Multi-layout
-training with a compact state encoding (Option~D) doubles OOD delivery independently
+The underlying mechanism is strongly tied to state coverage, especially
+under the multi-layout regime, rather than to adversary type alone. Multi-layout
+training with a compact state encoding (Exps~14--15) doubles OOD delivery independently
 of adversary choice and collapses OOD collision rates from $\sim$300/500 to
-$\sim$22/500. Enriching the state representation while simultaneously using
-multi-layout training (Option~C+D) backfires: the two mechanisms are incompatible
+$\sim$28/500. Enriching the state representation while simultaneously using
+multi-layout training (Exps~16--17) backfires: the two mechanisms are incompatible
 because one requires small state space (aliasing) and the other expands it
-(enrichment).
+(enrichment). With multi-layout training, adversary type becomes much less
+important than in the single-layout experiments, and adversarial training is no
+longer clearly beneficial on its own (Exp~14--15). When varying layout, the
+stochastic "nature" obstacle can fill out the state space comparably well to the
+deterministic and learned adversaries.
 
-The \textbf{OOD benefit has context-dependent boundary conditions.} Five complexity
-scaling experiments (Exps~20--24, all using multi-layout training and 5~seeds) show
-that the boundary is governed by obstacle density relative to grid size — not by
-added complexity in general. Dense obstacles on a small grid reverse the benefit
-($0.85\times$ on 5$\times$5 with 2~shelves), while the same obstacle count on a
-larger grid preserves it ($1.22\times$ on 7$\times$7 with 2~shelves). Cooperative
-multi-agent settings retain a modest benefit ($1.18\times$). Sequential task
-structure and doubled pursuit pressure produce near-neutral effects ($0.92\times$
-and $1.00\times$ respectively). The critical variable is whether adversary training
-induces topology-specific evasion strategies: tight-corridor environments trigger
-this failure; spacious grids and multi-agent settings do not.
+The OOD benefit has context-dependent boundary conditions. Five complexity
+scaling experiments (Exps~20--24, all using multi-layout training and 5~seeds) show mixed results
+relative to the multi-layout deterministic baseline in Exp~14 ($0.92\times$).
+Added packages produce a strong re-emergence of
+benefit ($1.81\times$). A larger grid with added shelves produces a moderate
+benefit ($1.26\times$ on 7$\times$7). Added shelves on 5$\times$5 and doubled
+adversary count produce only weak positive shifts ($1.07\times$ and
+$1.06\times$). Cooperative multi-agent settings remain below parity
+($0.89\times$), where the 62{,}500-state joint Q-table appears to exceed
+training coverage capacity. The critical variable is state space size relative
+to training budget, not added complexity in general.
 
-For practitioners: if deployment will involve diverse warehouse layouts, multi-layout
+If deployment will involve diverse warehouse layouts, multi-layout
 training with a minimal state encoding is more effective than adversarial training
-alone. For environments with fixed or partially known structure and sufficient grid
-space, the deterministic adversary provides reliable OOD robustness. In both cases,
-a learned co-evolving adversary appears counterproductive in the tabular regime.
+alone. If layout diversity in training is limited, a deterministic adversary can
+still provide reliable OOD robustness under the simpler single-layout conditions
+of Experiments~1--3, and in some harder multi-layout settings it can again become
+helpful. In both cases, a learned co-evolving adversary appears to be a nonfactor
+or counterproductive with a tabular Q-learning scheme.
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\balance
 \begin{thebibliography}{9}
 
 \bibitem{pinto2017rarl}
@@ -1115,30 +1320,76 @@ L.~Pinto, J.~Davidson, R.~Sukthankar, and A.~Gupta,
 ``Robust Adversarial Reinforcement Learning,''
 in \textit{Proceedings of the 34th International Conference on Machine Learning (ICML)},
 PMLR, vol.~70, pp.~2817--2826, 2017.
+\url{https://proceedings.mlr.press/v70/pinto17a/pinto17a.pdf}.
 
 \bibitem{tessler2019actionrobust}
 C.~Tessler, Y.~Efroni, and S.~Mannor,
 ``Action Robust Reinforcement Learning and Applications in Continuous Control,''
 in \textit{Proceedings of the 36th International Conference on Machine Learning (ICML)},
 PMLR, vol.~97, 2019.
+\url{https://proceedings.mlr.press/v97/tessler19a/tessler19a.pdf}.
 
 \bibitem{kristiansson2025warehouse}
 L.~Kristiansson and F.~Winkelmann,
 ``Comparative Analysis of A* and Q-Learning Algorithms for Robot Path Planning in Dynamic Warehouse Environments,''
 Bachelor's thesis, KTH Royal Institute of Technology, 2025.
+\url{https://www.diva-portal.org/smash/get/diva2:1985734/FULLTEXT01.pdf}.
 
 \bibitem{paczolay2021pursuitevasion}
 G.~Paczolay and I.~Harmati,
 ``A Simplified Pursuit-evasion Game with Reinforcement Learning,''
 \textit{Periodica Polytechnica Electrical Engineering and Computer Science},
 vol.~65, no.~2, pp.~160--166, 2021.
+doi:10.3311/PPee.16540.
+\url{https://pp.bme.hu/eecs/article/download/16540/9023/95223}.
 
 \bibitem{watkins1992qlearning}
 C.~J.~C.~H.~Watkins and P.~Dayan,
 ``Q-learning,''
 \textit{Machine Learning},
 vol.~8, no.~3--4, pp.~279--292, 1992.
+doi:10.1007/BF00992698.
+
+\bibitem{ng1999shaping}
+A.~Y.~Ng, D.~Harada, and S.~J.~Russell,
+``Policy Invariance Under Reward Transformations: Theory and Application to Reward Shaping,''
+in \textit{Proceedings of the 16th International Conference on Machine Learning (ICML)},
+pp.~278--287, 1999.
+\url{https://ai.stanford.edu/~ang/papers/shaping-icml99.pdf}.
+
+\bibitem{foerster2017stabilising}
+J.~Foerster, I.~A.~Assael, N.~de Freitas, and S.~Whiteson,
+``Stabilising Experience Replay for Deep Multi-Agent Reinforcement Learning,''
+in \textit{Proceedings of the 34th International Conference on Machine Learning (ICML)},
+PMLR, vol.~70, pp.~1146--1155, 2017.
+\url{https://proceedings.mlr.press/v70/foerster17b.html}.
 
 \end{thebibliography}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% The acknowledgments section is defined using the "acks" environment
+%%% (rather than an unnumbered section). The use of this environment 
+%%% ensures the proper identification of the section in the article 
+%%% metadata as well as the consistent spelling of the heading.
+
+% \begin{acks}
+% If you wish to include any acknowledgments in your paper (e.g., to 
+% people or funding agencies), please do so using the `\texttt{acks}' 
+% environment. Note that the text of your acknowledgments will be omitted
+% if you compile your document with the `\texttt{anonymous}' option.
+% \end{acks}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% The next two lines define, first, the bibliography style to be 
+%%% applied, and, second, the bibliography file to be used.
+
+% \bibliographystyle{ACM-Reference-Format} 
+% \bibliography{sample}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \end{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

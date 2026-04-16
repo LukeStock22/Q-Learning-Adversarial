@@ -1,0 +1,24 @@
+# Small deterministic control run to check for unintended side effects from the
+# learned-adversary evaluation fix. This is not used in the paper.
+
+project:
+  output_dir: outputs/investigation_control_det
+  seed: 2025
+
+run:
+  debug:
+    train_episodes: 800
+    eval_episodes: 20
+
+training:
+  num_train_layouts: 2
+
+rewards:
+  distance_shaping_enabled: true
+  distance_shaping_scale: 1.0
+
+eval:
+  ood_layout_count: 3
+
+experiment: {}
+scenarios: {}

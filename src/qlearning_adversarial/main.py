@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import tempfile
 from pathlib import Path
 
 import imageio.v2 as imageio
 import matplotlib.pyplot as plt
+import numpy as np
 import yaml
 
 from .agent import MultiAgentQLearning
@@ -18,12 +20,33 @@ from .utils import ensure_dir, seed_everything
 
 MOVING_AVG_WINDOW = 20
 METRICS_FILENAME = "metrics.txt"
+CONFIG_USED_FILENAME = "config_used.yaml"
 
 
 def load_config(path: Path) -> dict:
-    """Load YAML configuration into a dictionary."""
+    """Load YAML config and deep-merge it onto configs/default.yaml when present."""
     with path.open("r", encoding="utf-8") as handle:
-        return yaml.safe_load(handle)
+        config = yaml.safe_load(handle) or {}
+
+    default_path = Path("configs/default.yaml")
+    if path.resolve() == default_path.resolve() or not default_path.exists():
+        return config
+
+    with default_path.open("r", encoding="utf-8") as handle:
+        default_config = yaml.safe_load(handle) or {}
+
+    return deep_merge(default_config, config)
+
+
+def deep_merge(base: dict, override: dict) -> dict:
+    """Recursively merge override into base and return a new dict."""
+    merged = copy.deepcopy(base)
+    for key, value in override.items():
+        if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
+            merged[key] = deep_merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
 
 
 def apply_run_name(config: dict, run_name: str | None) -> dict:
@@ -48,6 +71,8 @@ def build_env(
     destinations: list[tuple[int, int]] | None = None,
     forklift_starts: list[tuple[int, int]] | None = None,
     adversary_start: tuple[int, int] | None = None,
+    adversary_q_table: np.ndarray | None = None,
+    evaluation_mode: bool = False,
 ) -> GridworldEnv:
     """Construct environment from common + scenario-specific config."""
     rewards_cfg = rewards_cfg or {}
@@ -167,6 +192,8 @@ def build_env(
         ),
         shelf_count=int(training.get("shelf_count", 1)),
         adversary_count=int(scenario_cfg.get("adversary_count", 1)),
+        adversary_q_table=adversary_q_table,
+        evaluation_mode=evaluation_mode,
     )
 
 
@@ -205,6 +232,13 @@ def save_rewards_and_plot(csv_dir: Path, curve_dir: Path, name: str, rewards: li
     plt.tight_layout()
     plt.savefig(plot_path)
     plt.close()
+
+
+def save_used_config(output_root: Path, config: dict) -> None:
+    """Persist the merged config used for a run alongside its outputs."""
+    config_path = output_root / CONFIG_USED_FILENAME
+    with config_path.open("w", encoding="utf-8") as handle:
+        yaml.safe_dump(config, handle, sort_keys=False)
 
 
 def save_rollout_gif(
@@ -266,6 +300,7 @@ def run_comparison(config: dict) -> None:
     png_dir = ensure_dir(output_root / "png")
     gif_dir = ensure_dir(output_root / "gif")
     txt_dir = ensure_dir(output_root / "txt")
+    save_used_config(output_root, config)
 
     train_episodes = int(tier_cfg.get("train_episodes", 5000))
     eval_episodes = int(tier_cfg.get("eval_episodes", 50))
@@ -320,6 +355,7 @@ def run_comparison(config: dict) -> None:
 
     policy_agents: dict[str, MultiAgentQLearning] = {}
     train_rewards_by_policy: dict[str, list[float]] = {}
+    learned_adversary_eval_tables: dict[str, dict[str, np.ndarray]] = {}
     scenario_order = [GridworldEnv.SCENARIO_NATURE, GridworldEnv.SCENARIO_ADVERSARY]
 
     for idx, scenario_name in enumerate(scenario_order):
@@ -362,11 +398,63 @@ def run_comparison(config: dict) -> None:
         env.render(path=str(png_dir / f"{scenario_name}_layout.png"))
 
         policy_agents[scenario_name] = agent
+        if (
+            scenario_name == GridworldEnv.SCENARIO_ADVERSARY
+            and env.adversary_policy == GridworldEnv.ADVERSARY_POLICY_LEARNING
+        ):
+            adversary_tables = [train_env.get_adversary_q_table() for train_env in train_envs]
+            learned_adversary_eval_tables[scenario_name] = {
+                "id_a": np.array(adversary_tables[0], copy=True),
+                # OOD layouts have no one-to-one trained adversary table, so use the
+                # average learned policy across the multi-layout curriculum.
+                "ood": np.mean(np.stack(adversary_tables, axis=0), axis=0),
+            }
         print(f"{scenario_name} final reward: {rewards[-1]:.2f}")
+
+    def build_eval_env_for_layout(
+        layout_bundle: dict,
+        eval_name: str,
+        split: str,
+    ) -> GridworldEnv:
+        """Construct an eval env, reusing learned adversary state when applicable."""
+        eval_scenario_cfg = scenarios.get(eval_name, {})
+        adversary_q_table = None
+        evaluation_mode = False
+        if (
+            eval_name == GridworldEnv.SCENARIO_ADVERSARY
+            and str(
+                eval_scenario_cfg.get(
+                    "adversary_policy",
+                    GridworldEnv.DEFAULT_ADVERSARY_POLICY,
+                )
+            )
+            == GridworldEnv.ADVERSARY_POLICY_LEARNING
+        ):
+            tables = learned_adversary_eval_tables.get(eval_name)
+            if tables is not None:
+                adversary_q_table = tables[split]
+                evaluation_mode = True
+
+        return build_env(
+            project,
+            training,
+            eval_scenario_cfg,
+            rewards_cfg=rewards_cfg,
+            state_features_cfg=state_features_cfg,
+            obstacles=set(layout_bundle["obstacles"]),
+            starts=layout_bundle["starts"],
+            package_locations=layout_bundle["package_locations"],
+            destinations=layout_bundle["destinations"],
+            forklift_starts=layout_bundle["forklift_starts"],
+            adversary_start=layout_bundle["adversary_start"],
+            adversary_q_table=adversary_q_table,
+            evaluation_mode=evaluation_mode,
+        )
 
     def evaluate_matrix(
         layout_bundles: list[dict],
         seed_base: int,
+        split: str,
     ) -> list[tuple[str, str, float, int, int, float]]:
         """Cross-test all policies across one or more layout bundles."""
         matrix: list[tuple[str, str, float, int, int, float]] = []
@@ -381,19 +469,7 @@ def run_comparison(config: dict) -> None:
                     # Include train_idx so stochastic tie-breaks do not replay the exact
                     # same RNG stream across different trained policies.
                     seed_everything(seed_base + train_idx * 100000 + eval_idx * 1000 + layout_idx)
-                    eval_env = build_env(
-                        project,
-                        training,
-                        scenarios.get(eval_name, {}),
-                        rewards_cfg=rewards_cfg,
-                        state_features_cfg=state_features_cfg,
-                        obstacles=set(layout_bundle["obstacles"]),
-                        starts=layout_bundle["starts"],
-                        package_locations=layout_bundle["package_locations"],
-                        destinations=layout_bundle["destinations"],
-                        forklift_starts=layout_bundle["forklift_starts"],
-                        adversary_start=layout_bundle["adversary_start"],
-                    )
+                    eval_env = build_eval_env_for_layout(layout_bundle, eval_name, split)
                     stats = evaluate_with_stats(
                         eval_env,
                         policy_agents[train_name],
@@ -419,8 +495,8 @@ def run_comparison(config: dict) -> None:
                 )
         return matrix
 
-    results_id_a = evaluate_matrix([layout_train], base_seed + 1000)
-    results_ood = evaluate_matrix(layout_ood_bundles, base_seed + 2000)
+    results_id_a = evaluate_matrix([layout_train], base_seed + 1000, "id_a")
+    results_ood = evaluate_matrix(layout_ood_bundles, base_seed + 2000, "ood")
 
     matrix_ida_path = csv_dir / "strategy_comparison_ida.csv"
     with matrix_ida_path.open("w", encoding="utf-8") as handle:
@@ -497,19 +573,7 @@ def run_comparison(config: dict) -> None:
     layout_ood = layout_ood_bundles[0]
     for train_name in scenario_order:
         for eval_name in scenario_order:
-            ida_env = build_env(
-                project,
-                training,
-                scenarios.get(eval_name, {}),
-                rewards_cfg=rewards_cfg,
-                state_features_cfg=state_features_cfg,
-                obstacles=set(layout_train["obstacles"]),
-                starts=layout_train["starts"],
-                package_locations=layout_train["package_locations"],
-                destinations=layout_train["destinations"],
-                forklift_starts=layout_train["forklift_starts"],
-                adversary_start=layout_train["adversary_start"],
-            )
+            ida_env = build_eval_env_for_layout(layout_train, eval_name, "id_a")
             save_rollout_gif(
                 ida_env,
                 policy_agents[train_name],
@@ -517,19 +581,7 @@ def run_comparison(config: dict) -> None:
                 max_steps=eval_max_steps,
             )
 
-            ood_env = build_env(
-                project,
-                training,
-                scenarios.get(eval_name, {}),
-                rewards_cfg=rewards_cfg,
-                state_features_cfg=state_features_cfg,
-                obstacles=set(layout_ood["obstacles"]),
-                starts=layout_ood["starts"],
-                package_locations=layout_ood["package_locations"],
-                destinations=layout_ood["destinations"],
-                forklift_starts=layout_ood["forklift_starts"],
-                adversary_start=layout_ood["adversary_start"],
-            )
+            ood_env = build_eval_env_for_layout(layout_ood, eval_name, "ood")
             save_rollout_gif(
                 ood_env,
                 policy_agents[train_name],
@@ -554,6 +606,7 @@ def run_single(config: dict) -> None:
     curve_dir = ensure_dir(output_root / "learningcurves")
     png_dir = ensure_dir(output_root / "png")
     gif_dir = ensure_dir(output_root / "gif")
+    save_used_config(output_root, config)
 
     tier = run.get("tier", "debug")
     tier_cfg = run.get(tier, {})
