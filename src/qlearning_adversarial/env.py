@@ -137,6 +137,8 @@ class GridworldEnv:
         include_coarse_destination_direction: bool = DEFAULT_INCLUDE_COARSE_DESTINATION_DIRECTION,
         shelf_count: int = 1,
         adversary_count: int = 1,
+        adversary_q_table: np.ndarray | None = None,
+        evaluation_mode: bool = False,
     ) -> None:
         self.size = size
         self.agent_count = agent_count
@@ -195,6 +197,7 @@ class GridworldEnv:
         self.adversary_learning_objective = adversary_learning_objective
         self.adversary_freeze_episode = max(0, int(adversary_freeze_episode))
         self._adversary_learning_epsilon = adversary_learning_epsilon_start
+        self.evaluation_mode = bool(evaluation_mode)
 
         # Reward/cost model for tuning.
         self.step_penalty = step_penalty
@@ -234,6 +237,8 @@ class GridworldEnv:
         self._training_episode = 0
         self._adversary_moves_used = 0
         self._adversary_q_table = np.zeros((size * size * size * size, self.ADVERSARY_ACTION_COUNT), dtype=float)
+        if adversary_q_table is not None:
+            self.set_adversary_q_table(adversary_q_table)
 
         if not self.package_locations or not self.destinations:
             self._generate_packages_and_destinations()
@@ -269,16 +274,19 @@ class GridworldEnv:
             self._adversary_positions = []
 
         if self.adversary_policy == self.ADVERSARY_POLICY_LEARNING:
-            episode_ref = self._active_training_episode()
-            frozen = self.adversary_freeze_episode > 0 and episode_ref > self.adversary_freeze_episode
-            if frozen:
+            if self.evaluation_mode:
                 self._adversary_learning_epsilon = self.adversary_learning_epsilon_end
             else:
-                progress = min(1.0, episode_ref / self.adversary_learning_epsilon_decay_episodes)
-                self._adversary_learning_epsilon = (
-                    self.adversary_learning_epsilon_start
-                    + progress * (self.adversary_learning_epsilon_end - self.adversary_learning_epsilon_start)
-                )
+                episode_ref = self._active_training_episode()
+                frozen = self.adversary_freeze_episode > 0 and episode_ref > self.adversary_freeze_episode
+                if frozen:
+                    self._adversary_learning_epsilon = self.adversary_learning_epsilon_end
+                else:
+                    progress = min(1.0, episode_ref / self.adversary_learning_epsilon_decay_episodes)
+                    self._adversary_learning_epsilon = (
+                        self.adversary_learning_epsilon_start
+                        + progress * (self.adversary_learning_epsilon_end - self.adversary_learning_epsilon_start)
+                    )
 
         if self.scenario == self.SCENARIO_NATURE:
             self.forklift_positions = self._spawn_forklifts()
@@ -534,6 +542,8 @@ class GridworldEnv:
         """Update adversary Q-table from saved transition and objective."""
         if not transition:
             return
+        if self.evaluation_mode:
+            return
         if self.adversary_freeze_episode > 0 and self._active_training_episode() > self.adversary_freeze_episode:
             return
 
@@ -554,6 +564,18 @@ class GridworldEnv:
         td_target = reward + self.adversary_learning_gamma * best_next
         td_error = td_target - self._adversary_q_table[state_idx, action]
         self._adversary_q_table[state_idx, action] += self.adversary_learning_alpha * td_error
+
+    def get_adversary_q_table(self) -> np.ndarray:
+        """Return a copy of the learned adversary table for persistence/eval."""
+        return np.array(self._adversary_q_table, copy=True)
+
+    def set_adversary_q_table(self, table: np.ndarray) -> None:
+        """Load a learned adversary table for evaluation or resumed use."""
+        expected_shape = (self.size * self.size * self.size * self.size, self.ADVERSARY_ACTION_COUNT)
+        array = np.asarray(table, dtype=float)
+        if array.shape != expected_shape:
+            raise ValueError(f"Expected adversary Q-table shape {expected_shape}, got {array.shape}")
+        self._adversary_q_table = np.array(array, copy=True)
 
     def _encode_adversary_state(self, adversary_pos: tuple[int, int], target_pos: tuple[int, int]) -> int:
         """Encode adversary/target positions into one Q-table index."""
