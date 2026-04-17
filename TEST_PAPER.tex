@@ -880,7 +880,7 @@ combined a freeze at episode 20k with multi-layout training (Exp~19).
 \textbf{Config} & \textbf{N$\to$N} & \textbf{A$\to$N} & \textbf{Ratio} \\
 \midrule
 Exp~9: co-evolving (single-layout)   & 96.4  & 103.6  & 1.07$\times$ \\
-Exp~18: freeze@10k (single-layout)  & 104.0  & 105.0  & 1.01$\times$ \\
+Exp~18: freeze@10k (single-layout)  & 96.4  & 105.0  & 1.09$\times$ \\
 Exp~15: multi-layout (no freeze)    & 230.8 & 247.2 & 1.07$\times$ \\
 Exp~19: multi-layout + freeze@20k   & 234.0 & 227.5 & 0.97$\times$ \\
 \bottomrule
@@ -888,18 +888,18 @@ Exp~19: multi-layout + freeze@20k   & 234.0 & 227.5 & 0.97$\times$ \\
 \end{table}
 
 \textbf{Findings.} Freezing the adversary moves the single-layout ratio from
-$1.07\times$ down to $1.01\times$, so it does not strengthen the learned adversary
-effect. In absolute terms, Exp~18 produces only a modest change, with OOD
-A$\to$N deliveries increasing from 103.6 to 105.0 while OOD N$\to$N also rises
-from 96.4 to 104.0. 
+$1.07\times$ to $1.09\times$, but only through a very small increase in OOD
+A$\to$N deliveries from 103.6 to 105.0. The single-layout result therefore
+remains a modest positive effect and still sits far below the deterministic
+baseline.
 
 Multi-layout + freeze (Exp~19) does not help. Relative to plain learned
 multi-layout training (Exp~15), OOD A$\to$N falls from 247.2 to 227.5,
 while N$\to$N rises slightly from 230.8 to 234.0.
 
 \textbf{Interpretation.} Stabilizing the learned adversary with a freeze does not
-recover a deterministic-style OOD advantage. Single-layout freeze falls back to
-near parity, and multi-layout + freeze slightly underperforms plain multi-layout on
+recover a deterministic-style OOD advantage. Single-layout freeze remains only
+modestly above parity, and multi-layout + freeze slightly underperforms plain multi-layout on
 the adversary-trained policy. The dominant effect is still layout diversity, not
 learned adversary stabilization.
 
@@ -921,7 +921,7 @@ Exps~10--11: proximity             & 375     & 48             & 73             &
 Exps~12--13: coarse dir.           & 151,875 & 116            & 121            & 1.05$\times$ \\
 \textbf{Exps~14--15: multi-layout} & \textbf{1,875} & \textbf{231} & \textbf{230} & 1.00$\times$ \\
 Exps~16--17: coarse + multi        & 151,875 & 181            & 173            & 0.96$\times$ \\
-Exp~18: single + freeze@10k        & 1,875   & 104.0           & 105.0           & 1.01$\times$ \\
+Exp~18: single + freeze@10k        & 1,875   & 96.4           & 105.0           & 1.09$\times$ \\
 Exp~19: multi + freeze@20k         & 1,875   & 234            & 228            & 0.97$\times$ \\
 \bottomrule
 \end{tabular}
@@ -1161,9 +1161,9 @@ single-layout effect in Experiment~1 ($1.93\times$).
 The freeze experiments help separate late-stage stability from early-stage
 coverage formation. When the learned adversary is frozen at episode 10{,}000 to
 halt Q-updates and lock epsilon to 0.05, the OOD ratio moves from
-$1.07\times$ (Exp~9) down to $1.01\times$ (Exp~18). OOD A$\to$N deliveries rise
-only slightly, from 103.6 to 105.0, while OOD N$\to$N also rises from 96.4 to
-104.0. So late stabilization does not rescue the single-layout gap. This points
+$1.07\times$ (Exp~9) to $1.09\times$ (Exp~18). OOD A$\to$N deliveries rise
+only slightly, from 103.6 to 105.0. Late stabilization does not materially change the
+single-layout picture. This points
 to the more important issue being the early training phase. The delivery agent
 spent its crucial coverage-building period training against a pursuer that was
 still learning and not yet consistently competent.
