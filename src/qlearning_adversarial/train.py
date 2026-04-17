@@ -127,6 +127,7 @@ def train(
         "adversary_learning_catch_reward": primary_env.adversary_learning_catch_reward,
         "adversary_learning_objective": primary_env.adversary_learning_objective,
         "adversary_freeze_episode": primary_env.adversary_freeze_episode,
+        "adversary_learning_update_on_skip": primary_env.adversary_learning_update_on_skip,
         "adversary_enabled": primary_env.adversary_enabled,
         "adversary_random_tiebreak": primary_env.adversary_random_tiebreak,
         "step_penalty": primary_env.step_penalty,
