@@ -153,6 +153,12 @@ def build_env(
                 GridworldEnv.DEFAULT_ADVERSARY_FREEZE_EPISODE,
             )
         ),
+        adversary_learning_update_on_skip=bool(
+            scenario_cfg.get(
+                "adversary_learning_update_on_skip",
+                GridworldEnv.DEFAULT_ADVERSARY_LEARNING_UPDATE_ON_SKIP,
+            )
+        ),
         adversary_random_tiebreak=bool(scenario_cfg.get("adversary_random_tiebreak", True)),
         adversary_enabled=bool(scenario_cfg.get("adversary_enabled", False)),
         step_penalty=float(rewards_cfg.get("step_penalty", GridworldEnv.DEFAULT_STEP_PENALTY)),
@@ -675,6 +681,12 @@ def run_single(config: dict) -> None:
             training.get(
                 "adversary_freeze_episode",
                 GridworldEnv.DEFAULT_ADVERSARY_FREEZE_EPISODE,
+            )
+        ),
+        "adversary_learning_update_on_skip": bool(
+            training.get(
+                "adversary_learning_update_on_skip",
+                GridworldEnv.DEFAULT_ADVERSARY_LEARNING_UPDATE_ON_SKIP,
             )
         ),
         "adversary_random_tiebreak": bool(training.get("adversary_random_tiebreak", True)),
