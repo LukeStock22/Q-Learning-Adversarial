@@ -172,7 +172,7 @@ A major challenge in reinforcement learning is that policies trained in one sett
 Tessler et al.~ also explore robustness with action uncertainty, where the agent's chosen action may be replaced by an adversarial alternative with some probability, or perturbed in continuous action spaces \cite{tessler2019actionrobust}. They relate these models to real-world robotics uncertainty (e.g., sudden pushes or actuator disturbances) and provide algorithms and evaluations in continuous-control domains.
 
 \subsection*{Reinforcement Learning for Navigation in Dynamic Warehouses}
-Warehouse navigation and path planning under changing conditions has also been studied from an applied perspective. Kristiansson and Winkelmann compare A* planning to Q-learning-based approaches for robot path planning in dynamic warehouse environments, evaluating performance primarily using throughput (packages delivered per robot over time) and showing that RL approaches can be more adaptable in highly dynamic scenarios (though it may be prone to overfitting) \cite{kristiansson2025warehouse}. This work supports the practical motivation for learning-based policies when obstacles and traffic patterns vary during operation.  
+Warehouse navigation and path planning under changing conditions have also been studied from an applied perspective. Kristiansson and Winkelmann compare A* planning to Q-learning-based approaches for robot path planning in dynamic warehouse environments, evaluating performance primarily using throughput (packages delivered per robot over time) and showing that RL approaches can be more adaptable in highly dynamic scenarios (though they may be prone to overfitting) \cite{kristiansson2025warehouse}. This work supports the practical motivation for learning-based policies when obstacles and traffic patterns vary during operation.  
 
 \subsection*{Multi-Agent and Moving-Opponent Settings}
 Dynamic adversaries can also be viewed through a multi-agent lens. Paczolay et al.~study evasion with collision avoidance and propose a method combining Minimax-Q and Nash-Q to better account for opponents' actions in multi-agent settings \cite{paczolay2021pursuitevasion}. While the domain differs from warehouse logistics, it is a good example of modeling moving opponents and reasoning about adversarial behavior in grid-like environments.
@@ -475,7 +475,7 @@ The reward confound is visible here. When evaluating on the OOD adversary scenar
 nature-trained policy shows slightly better average reward ($-79.1$) than the
 adversary-trained policy ($-84.6$) despite delivering far fewer packages (103 vs.\
 191). This is because the nature-trained agent is captured quickly, ending episodes
-early and accumulating fewer step penalties. This reaffirms that delivery count and not reward/score is the correct metric.
+early and accumulating fewer step penalties. This reaffirms that delivery count, not reward/score, is the correct metric.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Experiment 3: 7$\times$7 Grid (5 Seeds)}
@@ -576,7 +576,7 @@ $9^4 = 6{,}561$:
 \]
 
 With 40k training episodes and $\sim$200 steps each ($\approx 8$M transitions), only
-$\sim$3,500 Q-table entries were ever populated which covered just 0.02\% of the table.
+$\sim$3,500 Q-table entries were ever populated, covering just 0.02\% of the table.
 Every OOD state lookup returned all zeros. The fallback action was
 \codepath{random.choice(all_actions)}, seeded identically across all five experiment
 variants. As a result, the identical delivery counts were really just the
@@ -604,8 +604,7 @@ and the same 0.5 move probability used in the base adversary setting.
 confirmed broad nonzero Q-table coverage. Across the 5-seed Exp~9 rerun, the
 OOD A$\to$N replay hit states with at least one nonzero action value on
 119{,}697 of 201{,}778 state lookups (59.3\%), rather than collapsing into
-all-zero lookups. This no
-longer exhibits the failure mode seen in
+all-zero lookups. This no longer exhibits the failure mode seen in
 Experiments~4--8, so the evaluation reflects genuine policy behavior rather than
 a seeded random walk.
 
@@ -655,7 +654,7 @@ The distinction between deterministic and learned adversaries is clear in this
 comparison. The deterministic pursuer produces a much larger OOD advantage, whereas the
 learned adversary produces only a modest one. It is important to note that this is not a
 fully matched comparison. The learned run still differs in training time (40k vs.\
-20k episodes), a portion of the ratio decrease is the result of the N$\to$N Del metric improving.
+20k episodes), and part of the ratio decrease results from the improved N$\to$N delivery baseline.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -663,9 +662,9 @@ fully matched comparison. The learned run still differs in training time (40k vs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{sec:stateexp}
 
-Experiment~9 establishes the first valid learned-adversary comparison in the restored 1,875-
-    state space. In that baseline single-layout setting, OOD N→N is 96.4 and OOD A→N is 103.6
-    (ratio 1.07×). We then tested three design
+Experiment~9 establishes the first valid learned-adversary comparison in the restored 1,875-state
+space. In that baseline single-layout setting, OOD N$\to$N is 96.4 and OOD A$\to$N is 103.6
+(ratio $1.07\times$). We then tested three design
 interventions to improve OOD robustness: proximity-bucket encoding (Exps~10--11),
 coarse destination direction (Exps~12--13), and multi-layout training (Exps~14--15),
 with a combined variant in Exps~16--17. Each intervention is evaluated with both a
@@ -797,7 +796,7 @@ it produces the best OOD delivery result of any experiment so far (247.2 deliver
 single-layout baselines, showing that layout diversity is still the main source of
 the gain. But the learned result now sits modestly above parity
 (1.07$\times$) and above the deterministic multi-layout variant, so the two
-protocols no longer fully converge. It seems that once multi-layout training helps fill out the state-space, and learned adversary can provide an additional robustness benefit. The bigger point still holds that the jump from
+protocols no longer fully converge. It seems that once multi-layout training helps fill out the state space, a learned adversary can provide an additional robustness benefit. The bigger point still holds that the jump from
 single-layout to multi-layout training is much larger than the difference between
 the two adversary designs under multi-layout training.
 
@@ -959,7 +958,7 @@ and 5~seeds.
 
 Two new environment parameters were implemented: \codepath{shelf_count} (multiple
 non-overlapping shelf obstacles, static and not encoded in state) and
-\codepath{adversary_count} (multiple deterministic pursuers and state encodes
+\codepath{adversary_count} (multiple deterministic pursuers, with the state encoding
 the nearest pursuer's position, preserving the 1{,}875-state space).
 
 \begin{table}[H]
@@ -991,7 +990,7 @@ states). The OOD ratio is $1.81\times$, a strong benefit (5/5 seeds
 positive, N$\to$N: 188.0, A$\to$N: 340.8). Adversary training substantially
 improves OOD delivery on the two-package task. Relative to the multi-layout
 baseline from Exp~14 ($0.92\times$), this is a clear re-emergence of an OOD
-advantage under a harder task. This is consistent with the coverage-diversification mechanism still helping when the task
+advantage under a harder task. This result is consistent with the coverage-diversification mechanism still helping when the task
 becomes a longer sequential pickup-and-delivery problem. It is also consistent with deterministic adversary training being most beneficial when state space coverage is naturally lower, without state space exploding, and the adversary forces the agent into more evasion scenarios.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1212,15 +1211,15 @@ coverage capacity regardless of adversary type. Grid size also affects the stren
 the benefit under added obstacles. The 7$\times$7 grid with 2 shelves yields
 $1.26\times$ versus $1.07\times$ on the 5$\times$5 grid with the same obstacle
 count, consistent with the idea that the larger grid provides more navigable
-space for adversary-induced positional diversity, though isn't a clean one-factor comparison.
-The results point to the fact that adversarial training could provide a meaningful OOD
+space for adversary-induced positional diversity, though it is not a clean one-factor comparison.
+The results suggest that adversarial training could provide a meaningful OOD
 benefit in more complicated environments as long as state space is kept in check.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Limitations}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\textbf{No formal statistical tests.} We report effect sizes and seed counts and
+\textbf{No formal statistical tests.} We report effect sizes and seed counts,
 not p-values or confidence intervals. Some of the major results (deterministic
 adversary OOD advantage, multi-layout gain) involve large enough effects and several
 seeds such that the directional finding is robust. The moderate-effect results
@@ -1238,7 +1237,7 @@ across states by design, which would change the dynamic of both the OOD robustne
 benefit and the state space expansion tradeoffs.
 
 \textbf{The base state does not explicitly encode package and destination coordinates.}
- In the main 1,875-state setting, the policy observes agent position, dynamic-obstacle
+In the main 1,875-state setting, the policy observes agent position, dynamic-obstacle
 position, and package status, but not the package and dropoff locations directly.
 This makes the task a deliberately compact, partially observed control problem rather
 than a fully informed routing problem, so the results should not be over-read as
@@ -1258,7 +1257,7 @@ same procedural generation family used throughout the project. The paper
 therefore demonstrates robustness to unseen layouts within that family rather
 than to arbitrary warehouse topologies or broader real-world domain shift.
 
-\textbf{Limited training budget.} The majority of our experiments trained for 40k episodes. Considering that state space coverage was the most crucial factor in policy success, additional experiments with larger budgets should be conducted.
+\textbf{Limited training budget.} The majority of our experiments trained for 40k episodes. Given that state space coverage was the most crucial factor in policy success, additional experiments with larger budgets should be conducted.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \balance
