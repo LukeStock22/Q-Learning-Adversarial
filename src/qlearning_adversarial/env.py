@@ -79,6 +79,7 @@ class GridworldEnv:
     DEFAULT_ADVERSARY_LEARNING_CATCH_REWARD = 25.0
     DEFAULT_ADVERSARY_LEARNING_OBJECTIVE = ADVERSARY_OBJECTIVE_HEURISTIC
     DEFAULT_ADVERSARY_FREEZE_EPISODE = 0  # 0 = never freeze
+    DEFAULT_ADVERSARY_LEARNING_UPDATE_ON_SKIP = True
     DEFAULT_ADVERSARY_PROXIMITY_RADIUS = 0  # 0 = full position; >0 = 5-bucket directional proximity
     DEFAULT_INCLUDE_COARSE_DESTINATION_DIRECTION = False  # octant direction to pkg/dest (9×9=81 values)
 
@@ -122,6 +123,7 @@ class GridworldEnv:
         adversary_learning_catch_reward: float = DEFAULT_ADVERSARY_LEARNING_CATCH_REWARD,
         adversary_learning_objective: str = DEFAULT_ADVERSARY_LEARNING_OBJECTIVE,
         adversary_freeze_episode: int = DEFAULT_ADVERSARY_FREEZE_EPISODE,
+        adversary_learning_update_on_skip: bool = DEFAULT_ADVERSARY_LEARNING_UPDATE_ON_SKIP,
         adversary_enabled: bool | None = None,
         step_penalty: float = DEFAULT_STEP_PENALTY,
         obstacle_penalty: float = DEFAULT_OBSTACLE_PENALTY,
@@ -196,6 +198,7 @@ class GridworldEnv:
         self.adversary_learning_catch_reward = adversary_learning_catch_reward
         self.adversary_learning_objective = adversary_learning_objective
         self.adversary_freeze_episode = max(0, int(adversary_freeze_episode))
+        self.adversary_learning_update_on_skip = bool(adversary_learning_update_on_skip)
         self._adversary_learning_epsilon = adversary_learning_epsilon_start
         self.evaluation_mode = bool(evaluation_mode)
 
@@ -504,6 +507,8 @@ class GridworldEnv:
     ) -> dict:
         """Move adversary via internal tabular Q-learning policy and return transition."""
         if self.adversary_pos is None:
+            return {}
+        if not allow_move and not self.adversary_learning_update_on_skip:
             return {}
 
         target_before = min(
